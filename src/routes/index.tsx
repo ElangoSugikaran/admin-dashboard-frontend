@@ -3,6 +3,13 @@ import { useAuth } from '@/features/auth/AuthContext';
 import LoginPage from '@/features/auth/LoginPage';
 import AdminLayout from '@/components/layout/AdminLayout';
 import DashboardPage from '@/features/dashboard/DashboardPage';
+import ProjectsPage from '@/features/projects/ProjectsPage';
+import EducationPage from '@/features/education/EducationPage';
+import ExperiencePage from '@/features/experience/ExperiencePage';
+import SkillsPage from '@/features/skills/SkillsPage';
+import CertificatesPage from '@/features/certificates/CertificatesPage';
+import MessagesPage from '@/features/messages/MessagesPage';
+import SettingsPage from '@/features/settings/SettingsPage';
 
 // Simple protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -32,14 +39,13 @@ export const router = createBrowserRouter([
         index: true,
         element: <DashboardPage />,
       },
-      // Stubs for future pages
-      { path: 'projects', element: <div>Projects Page Stub</div> },
-      { path: 'education', element: <div>Education Page Stub</div> },
-      { path: 'experience', element: <div>Experience Page Stub</div> },
-      { path: 'skills', element: <div>Skills Page Stub</div> },
-      { path: 'certifications', element: <div>Certifications Page Stub</div> },
-      { path: 'messages', element: <div>Messages Page Stub</div> },
-      { path: 'settings', element: <div>Settings Page Stub</div> },
+      { path: 'projects', element: <ProjectsPage /> },
+      { path: 'education', element: <EducationPage /> },
+      { path: 'experience', element: <ExperiencePage /> },
+      { path: 'skills', element: <SkillsPage /> },
+      { path: 'certifications', element: <CertificatesPage /> },
+      { path: 'messages', element: <MessagesPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
 ]);
