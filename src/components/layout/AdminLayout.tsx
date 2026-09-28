@@ -102,7 +102,7 @@ function Topbar() {
               <div className="flex flex-col space-y-1 leading-none">
                 {user?.name && <p className="font-medium">{user.name}</p>}
                 {user?.email && (
-                  <p className="w-[200px] truncate text-sm text-muted-foreground">
+                  <p className="w-50 truncate text-sm text-muted-foreground">
                     {user.email}
                   </p>
                 )}
