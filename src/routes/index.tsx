@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
 import LoginPage from '@/features/auth/LoginPage';
+import ProfilePage from '@/features/profile/ProfilePage';
 import AdminLayout from '@/components/layout/AdminLayout';
 import DashboardPage from '@/features/dashboard/DashboardPage';
 import ProjectsPage from '@/features/projects/ProjectsPage';
@@ -13,7 +14,11 @@ import SettingsPage from '@/features/settings/SettingsPage';
 
 // Simple protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center text-muted-foreground">Loading session...</div>;
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -45,6 +50,7 @@ export const router = createBrowserRouter([
       { path: 'skills', element: <SkillsPage /> },
       { path: 'certifications', element: <CertificatesPage /> },
       { path: 'messages', element: <MessagesPage /> },
+      { path: 'profile', element: <ProfilePage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },
