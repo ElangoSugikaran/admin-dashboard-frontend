@@ -44,6 +44,7 @@ const navItems = [
 
 function AppSidebar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
@@ -72,9 +73,27 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="p-2">
-          {/* We can put an extra collapsed toggle or user profile here if we wanted */}
+      <SidebarFooter className="border-t p-4">
+        <div className="flex flex-col gap-4 group-data-[collapsible=icon]:items-center">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9 shrink-0">
+              <AvatarImage src={user?.avatar} alt={user?.name} />
+              <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
+              <span className="text-sm font-medium truncate">{user?.name || 'Admin'}</span>
+              <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start text-destructive group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9" 
+            onClick={logout}
+            title="Log out"
+          >
+            <LogOut className="h-4 w-4 group-data-[collapsible=icon]:mr-0 mr-2" />
+            <span className="group-data-[collapsible=icon]:hidden">Log out</span>
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
@@ -108,7 +127,7 @@ function Topbar() {
                 )}
               </div>
             </div>
-            <DropdownMenuItem render={<Link to="/settings" className="w-full cursor-pointer flex items-center" />}>
+            <DropdownMenuItem render={<Link to="/profile" className="w-full cursor-pointer flex items-center" />}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>

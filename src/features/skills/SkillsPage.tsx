@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { skillsService } from '@/services/api/skillsService';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { SkillForm } from './SkillForm';
@@ -9,22 +10,14 @@ import { Badge } from '@/components/ui/badge';
 export default function SkillsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const queryClient = useQueryClient();
-
+  
   const { data: items, isLoading } = useQuery({
     queryKey: ['skills'],
-    queryFn: async () => {
-      return [
-        { id: '1', name: 'React', category: 'Frontend', proficiency: 'Advanced' },
-        { id: '2', name: 'Node.js', category: 'Backend', proficiency: 'Intermediate' },
-      ];
-    },
+    queryFn: skillsService.getAll,
   });
-
+  
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return data;
-    },
+    mutationFn: skillsService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['skills'] });
       setIsFormOpen(false);

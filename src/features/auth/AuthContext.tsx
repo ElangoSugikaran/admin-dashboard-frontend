@@ -1,8 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminService } from '@/services/api/adminService';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (email: string) => void;
+  isLoading: boolean;
+  login: (userData: any) => void;
   logout: () => void;
   user: { name: string; email: string; avatar: string } | null;
 }
@@ -10,37 +13,37 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Read initial state from localStorage for persistence during dev
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('isAuthenticated') === 'true';
+  const queryClient = useQueryClient();
+
+  // Fetch session state from backend directly
+  const { data, isLoading } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: adminService.getMe,
+    retry: false, // Don't retry on 401 Unauthorized
   });
 
-  const [user, setUser] = useState<{ name: string; email: string; avatar: string } | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const isAuthenticated = !!data?.admin;
+  const user = data?.admin || null;
 
-  const login = (email: string) => {
-    setIsAuthenticated(true);
-    const mockUser = {
-      name: 'Admin User',
-      email: email,
-      avatar: 'https://github.com/shadcn.png'
-    };
-    setUser(mockUser);
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('user', JSON.stringify(mockUser));
+  // Optimistically set the user in cache upon manual login
+  const login = (userData: any) => {
+    queryClient.setQueryData(['auth', 'me'], { admin: userData });
   };
 
+  const logoutMutation = useMutation({
+    mutationFn: adminService.logout,
+    onSettled: () => {
+      // Clear auth cache which will trigger re-renders and redirect to login
+      queryClient.setQueryData(['auth', 'me'], null);
+    }
+  });
+
   const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
+    logoutMutation.mutate();
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, user }}>
       {children}
     </AuthContext.Provider>
   );
