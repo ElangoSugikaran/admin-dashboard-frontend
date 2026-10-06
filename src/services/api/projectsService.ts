@@ -2,13 +2,32 @@ import { apiClient } from '@/lib/api';
 
 export interface Project {
   id: string;
+  slug: string;
   title: string;
+  shortDescription: string;
   description: string;
-  imageUrl?: string;
-  projectUrl?: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  featured: boolean;
+  sortOrder: number;
   githubUrl?: string;
-  technologies?: string[];
+  liveUrl?: string;
+  methodology?: string;
+  aim?: string;
+  objectives: string[];
+  features: string[];
+  skillsDemonstrated: string[];
+  startedAt?: string;
+  completedAt?: string;
+  categoryId?: string;
+  thumbnailId?: string;
+  
+  // Relationships
+  category?: any;
+  thumbnail?: any;
+  technologies?: any[];
+  
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export const projectsService = {

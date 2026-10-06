@@ -1,39 +1,58 @@
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, X } from 'lucide-react';
+import { UploadCloud, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface FileUploadProps {
-  value?: File | string | null;
-  onChange: (file: File | null) => void;
+  value?: { id: string, url: string } | string | null;
+  onChange: (file: { id: string, url: string } | string | null) => void;
+  onUpload?: (file: File) => Promise<{ id: string, url: string }>;
   accept?: string;
   maxSize?: number; // in bytes
 }
 
-export function FileUpload({ value, onChange, accept = 'image/*', maxSize = 5 * 1024 * 1024 }: FileUploadProps) {
+export function FileUpload({ value, onChange, onUpload, accept = 'image/*', maxSize = 5 * 1024 * 1024 }: FileUploadProps) {
   const [preview, setPreview] = React.useState<string | null>(
     typeof value === 'string' ? value : null
   );
 
+  const [isUploading, setIsUploading] = React.useState(false);
+
   React.useEffect(() => {
-    if (typeof value === 'string') {
+    if (value && typeof value === 'object' && 'url' in value) {
+      setPreview(value.url);
+    } else if (typeof value === 'string') {
       setPreview(value);
-    } else if (value instanceof File) {
-      setPreview(URL.createObjectURL(value));
-    } else if (!value) {
+    } else {
       setPreview(null);
     }
   }, [value]);
 
   const onDrop = React.useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
-      if (file) {
+      if (!file) return;
+
+      if (onUpload) {
+        try {
+          setIsUploading(true);
+          const toastId = toast.loading('Uploading image...');
+          const result = await onUpload(file);
+          setPreview(result.url); // Use the returned remote URL for preview
+          onChange({ id: result.id, url: result.url }); // Pass both ID and URL back to the form
+          toast.success('Image uploaded successfully!', { id: toastId });
+        } catch (error) {
+          toast.error('Failed to upload image. Please try again.');
+        } finally {
+          setIsUploading(false);
+        }
+      } else {
         onChange(file);
       }
     },
-    [onChange]
+    [onChange, onUpload]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -56,7 +75,7 @@ export function FileUpload({ value, onChange, accept = 'image/*', maxSize = 5 * 
           <img
             src={preview}
             alt="Preview"
-            className="w-full h-auto object-cover max-h-48"
+            className="w-full h-auto object-cover max-h-64"
           />
           <Button
             type="button"
@@ -64,15 +83,21 @@ export function FileUpload({ value, onChange, accept = 'image/*', maxSize = 5 * 
             size="icon"
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={clearFile}
+            disabled={isUploading}
           >
             <X className="h-4 w-4" />
           </Button>
+        </div>
+      ) : isUploading ? (
+        <div className="flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-md border-primary/50 bg-muted/20">
+          <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+          <p className="text-sm text-muted-foreground font-medium">Uploading image...</p>
         </div>
       ) : (
         <div
           {...getRootProps()}
           className={cn(
-            'flex flex-col items-center justify-center w-full max-w-sm h-32 border-2 border-dashed rounded-md cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-md cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             isDragActive
               ? 'border-primary bg-primary/5'
               : 'border-muted-foreground/25 hover:bg-muted/50'
