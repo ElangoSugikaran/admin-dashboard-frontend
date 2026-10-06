@@ -1,59 +1,136 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// import { apiClient } from '@/lib/api';
+import { projectsService } from '@/services/api/projectsService';
+import { mediaService } from '@/services/api/mediaService';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { ProjectForm } from './ProjectForm';
+import { ProjectForm, type ProjectFormValues } from './ProjectForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-
-// Mock types
-interface Project {
-  id: string;
-  title: string;
-  status: string;
-  techStack: string[];
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ProjectsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<any>(null);
   const queryClient = useQueryClient();
 
-  // Fetch projects (mocking it if backend isn't ready)
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
-    queryFn: async () => {
-      // return apiClient.get('/projects').then(res => res.data);
-      // For now, return mock data since backend isn't connected
-      return [
-        { id: '1', title: 'Admin Dashboard', status: 'published', techStack: ['React', 'Vite', 'Tailwind'] },
-        { id: '2', title: 'E-commerce Platform', status: 'draft', techStack: ['Next.js', 'Prisma', 'Stripe'] },
-      ];
-    },
+    queryFn: projectsService.getAll,
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      // return apiClient.post('/projects', data);
-      console.log('Creating project:', data);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return data;
-    },
+    mutationFn: projectsService.create,
     onSuccess: () => {
+      toast.success('Project created successfully');
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setIsFormOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to create project');
     }
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => projectsService.update(id, data),
+    onSuccess: () => {
+      toast.success('Project updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setIsFormOpen(false);
+      setEditingId(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to update project');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: projectsService.delete,
+    onSuccess: () => {
+      toast.success('Project deleted');
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setProjectToDelete(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to delete project');
+    }
+  });
+
+  const handleSubmit = async (values: ProjectFormValues) => {
+    try {
+      // FileUpload handles the async upload immediately, so values.thumbnail is an object { id, url }.
+      // We just need to assign it to thumbnailId.
+      let thumbnailId = values.thumbnail?.id || null;
+
+      // Convert arrays back to flat strings as expected by the backend,
+      // and map empty strings to null for optional fields to prevent DB errors.
+      const payload = {
+        ...values,
+        objectives: values.objectives.map(o => o.value),
+        features: values.features.map(f => f.value),
+        skillsDemonstrated: values.skillsDemonstrated.map(s => s.value),
+        categoryId: values.categoryId === "" ? null : values.categoryId,
+        githubUrl: values.githubUrl === "" ? null : values.githubUrl,
+        liveUrl: values.liveUrl === "" ? null : values.liveUrl,
+        methodology: values.methodology === "" ? null : values.methodology,
+        aim: values.aim === "" ? null : values.aim,
+        startedAt: values.startedAt === "" ? null : values.startedAt,
+        completedAt: values.completedAt === "" ? null : values.completedAt,
+        thumbnailId
+      };
+
+      // Strip out the raw File object from the payload before sending
+      delete payload.thumbnail;
+
+      if (editingId) {
+        updateMutation.mutate({ id: editingId, data: payload });
+      } else {
+        createMutation.mutate(payload);
+      }
+    } catch (error) {
+      toast.error('Error handling media upload. Please try again.');
+    }
+  };
+
+  const handleEdit = (project: any) => {
+    setEditingId(project.id);
+    setIsFormOpen(true);
+  };
+
+  const selectedProject = projects?.find((p: any) => p.id === editingId);
+
+  // Form initial values mapped from the backend DTO
+  const initialValues = selectedProject ? {
+    ...selectedProject,
+    thumbnail: selectedProject.thumbnail ? { id: selectedProject.thumbnail.id, url: selectedProject.thumbnail.url } : null,
+    objectives: selectedProject.objectives?.map((v: string) => ({ value: v })) || [],
+    features: selectedProject.features?.map((v: string) => ({ value: v })) || [],
+    skillsDemonstrated: selectedProject.skillsDemonstrated?.map((v: string) => ({ value: v })) || [],
+    technologyIds: selectedProject.technologies?.map((t: any) => t.id) || [],
+  } : undefined;
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">Manage your portfolio projects here.</p>
+          <p className="text-muted-foreground mt-1">Manage your portfolio projects.</p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => { setEditingId(null); setIsFormOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" /> Add Project
         </Button>
       </div>
@@ -61,28 +138,36 @@ export default function ProjectsPage() {
       <div className="border rounded-lg bg-card text-card-foreground shadow-sm">
         <div className="p-6">
           {isLoading ? (
-            <div className="flex items-center justify-center p-8 text-muted-foreground">
-              Loading projects...
-            </div>
+            <p className="text-muted-foreground text-center">Loading projects...</p>
           ) : projects?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-              <p className="text-muted-foreground mb-4">No projects found. Add one to get started.</p>
-              <Button variant="outline" onClick={() => setIsFormOpen(true)}>Create Project</Button>
-            </div>
+            <p className="text-muted-foreground text-center">No projects found.</p>
           ) : (
-            <div className="space-y-4">
-              {projects?.map((project: Project) => (
-                <div key={project.id} className="flex items-center justify-between p-4 border rounded-md hover:bg-muted/50 transition-colors">
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-semibold text-lg">{project.title}</h3>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={project.status === 'published' ? 'default' : 'secondary'}>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {projects?.map((project: any) => (
+                <div key={project.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors">
+                  {project.thumbnail?.url ? (
+                    <img src={project.thumbnail.url} alt={project.title} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
+                  ) : (
+                    <div className="w-24 h-24 bg-muted flex items-center justify-center rounded-md flex-shrink-0 text-muted-foreground text-xs text-center p-2">
+                      No Image
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg truncate">{project.title}</h3>
+                    <p className="text-sm text-muted-foreground truncate">{project.shortDescription}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Badge variant={project.status === 'PUBLISHED' ? 'default' : 'secondary'}>
                         {project.status}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">{project.techStack.join(', ')}</span>
+                      {project.featured && <Badge variant="outline" className="border-yellow-500 text-yellow-600">Featured</Badge>}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">Edit</Button>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(project)}>Edit</Button>
+                    <Button variant="destructive" size="sm" onClick={() => setProjectToDelete(project)}>Delete</Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -93,16 +178,44 @@ export default function ProjectsPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-4xl w-full max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
+            <DialogTitle>{editingId ? 'Edit Project' : 'Add Project'}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <ProjectForm 
-              onSubmit={(data) => createMutation.mutate(data)} 
-              isLoading={createMutation.isPending}
+            <ProjectForm
+              key={editingId || 'new'}
+              initialValues={initialValues}
+              onSubmit={handleSubmit}
+              isLoading={isSaving}
             />
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the project "{projectToDelete?.title}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                if (projectToDelete?.id) {
+                  deleteMutation.mutate(projectToDelete.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

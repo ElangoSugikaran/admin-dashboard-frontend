@@ -4,13 +4,25 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FileUpload } from '@/components/ui/file-upload';
+import { IconSelector } from '@/components/ui/icon-selector';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const skillSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  category: z.string().min(1, 'Category is required'),
-  proficiency: z.string().min(1, 'Proficiency is required'),
-  icon: z.any().optional(),
+  category: z.enum([
+    'FRONTEND', 
+    'BACKEND', 
+    'FRAMEWORK', 
+    'DATABASE', 
+    'CSS_FRAMEWORK', 
+    'DESIGN_TOOL', 
+    'SERVICE', 
+    'TOOL'
+  ]),
+  showInSkills: z.boolean(),
+  sortOrder: z.number(),
+  icon: z.string().optional().nullable(),
 });
 
 type SkillFormValues = z.infer<typeof skillSchema>;
@@ -26,8 +38,9 @@ export function SkillForm({ initialValues, onSubmit, isLoading }: SkillFormProps
     resolver: zodResolver(skillSchema),
     defaultValues: {
       name: initialValues?.name || '',
-      category: initialValues?.category || '',
-      proficiency: initialValues?.proficiency || 'Intermediate',
+      category: initialValues?.category || 'FRONTEND',
+      showInSkills: initialValues?.showInSkills || false,
+      sortOrder: initialValues?.sortOrder || 0,
       icon: initialValues?.icon || null,
     },
   });
@@ -47,25 +60,59 @@ export function SkillForm({ initialValues, onSubmit, isLoading }: SkillFormProps
             control={form.control}
             name="category"
             render={({ field }) => (
-              <FormItem><FormLabel>Category</FormLabel><FormControl><Input placeholder="Frontend" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="FRONTEND">Frontend</SelectItem>
+                    <SelectItem value="BACKEND">Backend</SelectItem>
+                    <SelectItem value="FRAMEWORK">Framework</SelectItem>
+                    <SelectItem value="DATABASE">Database</SelectItem>
+                    <SelectItem value="CSS_FRAMEWORK">CSS Framework</SelectItem>
+                    <SelectItem value="DESIGN_TOOL">Design Tool</SelectItem>
+                    <SelectItem value="SERVICE">Service (e.g. AWS)</SelectItem>
+                    <SelectItem value="TOOL">Tool (e.g. Git)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="proficiency"
+            name="sortOrder"
             render={({ field }) => (
-              <FormItem><FormLabel>Proficiency</FormLabel><FormControl><Input placeholder="Advanced" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Sort Order</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>
             )}
           />
         </div>
         <FormField
           control={form.control}
-          name="icon"
+          name="showInSkills"
           render={({ field }) => (
-            <FormItem><FormLabel>Icon (Optional)</FormLabel><FormControl><FileUpload value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5"><FormLabel className="text-base">Show on Skills Page</FormLabel></div>
+              <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+            </FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Skill'}</Button>
+        <FormField
+          control={form.control}
+          name="icon"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>DevIcon (e.g. ReactOriginal)</FormLabel>
+              <FormControl>
+                <IconSelector value={field.value || ""} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Skill'}</Button>
+        </div>
       </form>
     </Form>
   );
