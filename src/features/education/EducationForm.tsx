@@ -7,16 +7,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { FileUpload } from '@/components/ui/file-upload';
 import { GeneralIconSelector } from '@/components/ui/general-icon-selector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const educationSchema = z.object({
   institution: z.string().min(1, 'Institution is required'),
-  degree: z.string().min(1, 'Degree/Qualification is required'),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().optional(),
+  title: z.string().min(1, 'Degree/Qualification is required'),
+  type: z.enum(['DEGREE', 'DIPLOMA', 'CERTIFICATE', 'SCHOOL']),
+  startDate: z.string().min(1, 'Start date/year is required'),
+  endDate: z.string().optional().nullable(),
+  grade: z.string().optional().nullable(),
   description: z.string().optional(),
-  certificateFile: z.any().optional(),
   icon: z.string().optional().nullable(),
 });
 
@@ -33,11 +34,12 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
     resolver: zodResolver(educationSchema),
     defaultValues: {
       institution: initialValues?.institution || '',
-      degree: initialValues?.degree || '',
+      title: initialValues?.title || '',
+      type: initialValues?.type || 'DEGREE',
       startDate: initialValues?.startDate || '',
       endDate: initialValues?.endDate || '',
+      grade: initialValues?.grade || '',
       description: initialValues?.description || '',
-      certificateFile: initialValues?.certificateFile || null,
       icon: initialValues?.icon || null,
     },
   });
@@ -45,41 +47,83 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <FormField
-          control={form.control}
-          name="institution"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Institution</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. University of Example" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="degree"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Degree / Qualification</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. B.S. Computer Science" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="institution"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Institution</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. University of Example" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title (Degree/Certificate)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. B.S. Computer Science" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Education Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="DEGREE">Degree</SelectItem>
+                    <SelectItem value="DIPLOMA">Diploma</SelectItem>
+                    <SelectItem value="CERTIFICATE">Certificate</SelectItem>
+                    <SelectItem value="SCHOOL">School</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="grade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Grade / Result (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. First Class Honours" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date</FormLabel>
+                <FormLabel>Start Date / Year</FormLabel>
                 <FormControl>
-                  <Input type="month" {...field} />
+                  <Input type="text" placeholder="e.g. April 2025 or 2023" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -90,54 +134,44 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
             name="endDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>End Date (leave blank if present)</FormLabel>
+                <FormLabel>End Date / Year (leave blank if present)</FormLabel>
                 <FormControl>
-                  <Input type="month" {...field} />
+                  <Input type="text" placeholder="e.g. July 2025" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description / Achievements</FormLabel>
-                <FormControl>
-                  <RichTextEditor value={field.value || ''} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Institution Icon (e.g. University logo)</FormLabel>
-                <FormControl>
-                  <GeneralIconSelector value={field.value || ""} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
         <FormField
           control={form.control}
-          name="certificateFile"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Certificate (Optional)</FormLabel>
+              <FormLabel>Description / Achievements</FormLabel>
               <FormControl>
-                <FileUpload value={field.value} onChange={field.onChange} accept="image/*,application/pdf" />
+                <RichTextEditor value={field.value || ''} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="icon"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Institution Icon</FormLabel>
+              <FormControl>
+                <GeneralIconSelector value={field.value || ""} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex justify-end">
           <Button type="submit" disabled={isLoading}>
             {isLoading ? 'Saving...' : 'Save Education'}

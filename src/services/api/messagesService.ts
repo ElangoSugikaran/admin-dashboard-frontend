@@ -5,8 +5,10 @@ export interface Message {
   name: string;
   email: string;
   subject?: string;
-  message: string;
+  body: string;
   isRead: boolean;
+  isArchived?: boolean;
+  status?: string;
   createdAt?: string;
 }
 
@@ -21,8 +23,8 @@ export const messagesService = {
     return response.data?.data || response.data;
   },
 
-  markAsRead: async (id: string) => {
-    const response = await apiClient.patch(`/messages/${id}/read`);
+  updateStatus: async (id: string, data: { isRead?: boolean; isArchived?: boolean }) => {
+    const response = await apiClient.patch(`/messages/${id}`, data);
     return response.data;
   },
 

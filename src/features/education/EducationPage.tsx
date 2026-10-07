@@ -111,7 +111,7 @@ export default function EducationPage() {
                       })()}
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-lg truncate">{item.institution}</h3>
-                        <p className="text-muted-foreground truncate">{item.degree}</p>
+                        <p className="text-muted-foreground truncate">{item.title}</p>
                       </div>
                     </div>
                     <div className="mt-3 text-sm text-muted-foreground">
@@ -173,17 +173,17 @@ export default function EducationPage() {
                   })()}
                   <div>
                     <h3 className="font-bold text-xl">{viewItem.institution}</h3>
-                    <p className="text-muted-foreground">{viewItem.degree}</p>
+                    <p className="text-muted-foreground">{viewItem.title}</p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="font-medium block text-sm">Start Date</span>
+                    <span className="font-medium block text-sm">Start Date/Year</span>
                     <span className="text-muted-foreground">{viewItem.startDate}</span>
                   </div>
                   <div>
-                    <span className="font-medium block text-sm">End Date</span>
+                    <span className="font-medium block text-sm">End Date/Year</span>
                     <span className="text-muted-foreground">{viewItem.endDate || 'Present'}</span>
                   </div>
                 </div>
