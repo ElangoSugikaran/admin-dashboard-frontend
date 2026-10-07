@@ -5,12 +5,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FileUpload } from '@/components/ui/file-upload';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { mediaService } from '@/services/api/mediaService';
 
 const certificateSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   issuingBody: z.string().min(1, 'Issuing Body is required'),
   date: z.string().min(1, 'Date is required'),
-  associatedModule: z.string().optional(),
+  category: z.enum(['ACADEMIC', 'DIGITAL']),
+  credentialUrl: z.string().optional(),
   file: z.any().optional(),
 });
 
@@ -29,7 +32,8 @@ export function CertificateForm({ initialValues, onSubmit, isLoading }: Certific
       title: initialValues?.title || '',
       issuingBody: initialValues?.issuingBody || '',
       date: initialValues?.date || '',
-      associatedModule: initialValues?.associatedModule || '',
+      category: initialValues?.category || 'ACADEMIC',
+      credentialUrl: initialValues?.credentialUrl || '',
       file: initialValues?.file || null,
     },
   });
@@ -51,30 +55,51 @@ export function CertificateForm({ initialValues, onSubmit, isLoading }: Certific
             <FormItem><FormLabel>Issuing Body</FormLabel><FormControl><Input placeholder="Amazon Web Services" {...field} /></FormControl><FormMessage /></FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem><FormLabel>Date Issued</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="associatedModule"
-            render={({ field }) => (
-              <FormItem><FormLabel>Associated Module</FormLabel><FormControl><Input placeholder="Education or Skill Name" {...field} /></FormControl><FormMessage /></FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem><FormLabel>Date Issued</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="ACADEMIC">Academic / Primary</SelectItem>
+                  <SelectItem value="DIGITAL">Digital / E-Certificate</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="credentialUrl"
+          render={({ field }) => (
+            <FormItem><FormLabel>Credential URL (Optional)</FormLabel><FormControl><Input placeholder="https://verify.com/..." {...field} /></FormControl><FormMessage /></FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="file"
           render={({ field }) => (
-            <FormItem><FormLabel>Certificate File</FormLabel><FormControl><FileUpload value={field.value} onChange={field.onChange} accept="image/*,application/pdf" /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Certificate File</FormLabel><FormControl><FileUpload value={field.value} onChange={field.onChange} onUpload={mediaService.uploadFile} accept="image/*,application/pdf" /></FormControl><FormMessage /></FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Certificate'}</Button>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Certificate'}</Button>
+        </div>
       </form>
     </Form>
   );

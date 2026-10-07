@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { FileUpload } from '@/components/ui/file-upload';
+import { GeneralIconSelector } from '@/components/ui/general-icon-selector';
 
 const educationSchema = z.object({
   institution: z.string().min(1, 'Institution is required'),
@@ -16,6 +17,7 @@ const educationSchema = z.object({
   endDate: z.string().optional(),
   description: z.string().optional(),
   certificateFile: z.any().optional(),
+  icon: z.string().optional().nullable(),
 });
 
 type EducationFormValues = z.infer<typeof educationSchema>;
@@ -36,6 +38,7 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
       endDate: initialValues?.endDate || '',
       description: initialValues?.description || '',
       certificateFile: initialValues?.certificateFile || null,
+      icon: initialValues?.icon || null,
     },
   });
 
@@ -96,19 +99,32 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description / Achievements</FormLabel>
-              <FormControl>
-                <RichTextEditor value={field.value || ''} onChange={field.onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description / Achievements</FormLabel>
+                <FormControl>
+                  <RichTextEditor value={field.value || ''} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Institution Icon (e.g. University logo)</FormLabel>
+                <FormControl>
+                  <GeneralIconSelector value={field.value || ""} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         <FormField
           control={form.control}
           name="certificateFile"
@@ -122,9 +138,11 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save Education'}
-        </Button>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Education'}
+          </Button>
+        </div>
       </form>
     </Form>
   );

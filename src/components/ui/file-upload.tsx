@@ -49,7 +49,7 @@ export function FileUpload({ value, onChange, onUpload, accept = 'image/*', maxS
           setIsUploading(false);
         }
       } else {
-        onChange(file);
+        onChange(file as any);
       }
     },
     [onChange, onUpload]

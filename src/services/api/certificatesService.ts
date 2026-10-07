@@ -12,21 +12,48 @@ export interface Certificate {
 export const certificatesService = {
   getAll: async (): Promise<Certificate[]> => {
     const response = await apiClient.get('/certificates');
-    return response.data?.data || response.data;
+    const data = response.data?.data || response.data;
+    if (Array.isArray(data)) {
+      return data.map((item: any) => ({
+        ...item,
+        date: item.issuedAt ? item.issuedAt.split('T')[0].substring(0, 7) : item.date,
+      }));
+    }
+    return data;
   },
   
   getById: async (id: string): Promise<Certificate> => {
     const response = await apiClient.get(`/certificates/${id}`);
-    return response.data?.data || response.data;
+    const item = response.data?.data || response.data;
+    if (item) {
+      item.date = item.issuedAt ? item.issuedAt.split('T')[0].substring(0, 7) : item.date;
+    }
+    return item;
   },
 
   create: async (data: any) => {
-    const response = await apiClient.post('/certificates', data);
+    const payload = {
+      title: data.title,
+      issuer: data.issuingBody,
+      category: data.category,
+      issuedAt: data.date ? new Date(data.date + '-01').toISOString() : null,
+      credentialUrl: data.credentialUrl,
+      imageId: data.file?.id,
+    };
+    const response = await apiClient.post('/certificates', payload);
     return response.data;
   },
 
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/certificates/${id}`, data);
+    const payload = {
+      title: data.title,
+      issuer: data.issuingBody,
+      category: data.category,
+      issuedAt: data.date ? new Date(data.date + '-01').toISOString() : undefined,
+      credentialUrl: data.credentialUrl,
+      imageId: data.file?.id,
+    };
+    const response = await apiClient.put(`/certificates/${id}`, payload);
     return response.data;
   },
 

@@ -5,6 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { GeneralIconSelector } from '@/components/ui/general-icon-selector';
 
 const experienceSchema = z.object({
   company: z.string().min(1, 'Company is required'),
@@ -12,6 +13,7 @@ const experienceSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
   description: z.string().optional(),
+  icon: z.string().optional().nullable(),
 });
 
 type ExperienceFormValues = z.infer<typeof experienceSchema>;
@@ -31,6 +33,7 @@ export function ExperienceForm({ initialValues, onSubmit, isLoading }: Experienc
       startDate: initialValues?.startDate || '',
       endDate: initialValues?.endDate || '',
       description: initialValues?.description || '',
+      icon: initialValues?.icon || null,
     },
   });
 
@@ -74,7 +77,22 @@ export function ExperienceForm({ initialValues, onSubmit, isLoading }: Experienc
             <FormItem><FormLabel>Responsibilities / Impact</FormLabel><FormControl><RichTextEditor value={field.value || ''} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Experience'}</Button>
+        <FormField
+          control={form.control}
+          name="icon"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Icon (e.g. Building)</FormLabel>
+              <FormControl>
+                <GeneralIconSelector value={field.value || ""} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Experience'}</Button>
+        </div>
       </form>
     </Form>
   );
