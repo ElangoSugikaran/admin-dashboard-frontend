@@ -63,7 +63,7 @@ export function SkillForm({ initialValues, onSubmit, isLoading }: SkillFormProps
               <FormItem>
                 <FormLabel>Category</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Category" /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="FRONTEND">Frontend</SelectItem>
                     <SelectItem value="BACKEND">Backend</SelectItem>

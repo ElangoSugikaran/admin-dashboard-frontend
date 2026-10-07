@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { skillsService } from '@/services/api/skillsService';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
 import { SkillForm } from './SkillForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ export default function SkillsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [viewItem, setViewItem] = useState<any>(null);
   
   const queryClient = useQueryClient();
   
@@ -90,7 +91,14 @@ export default function SkillsPage() {
 
       <div className="border rounded-lg bg-card text-card-foreground shadow-sm">
         <div className="p-6">
-          {isLoading ? <p className="text-muted-foreground text-center">Loading...</p> : items?.length === 0 ? <p className="text-muted-foreground text-center">No skills found.</p> : (
+          {isLoading ? (
+            <p className="text-muted-foreground text-center">Loading...</p>
+          ) : !items || items.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No skills found.</p>
+              <Button variant="outline" onClick={openCreateDialog}>Add Skill</Button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {items?.map((item: any) => (
                 <div key={item.id} className="flex items-center justify-between p-4 border rounded-md hover:bg-muted/50 transition-colors overflow-hidden">
@@ -119,6 +127,9 @@ export default function SkillsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => setViewItem(item)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -141,14 +152,50 @@ export default function SkillsPage() {
               key={selectedItem?.id || 'new'} 
               initialValues={selectedItem || undefined} 
               onSubmit={(data) => {
+                const submitData = { ...data, icon: data.icon || undefined };
                 if (selectedItem) {
-                  updateMutation.mutate({ id: selectedItem.id, data });
+                  updateMutation.mutate({ id: selectedItem.id, data: submitData });
                 } else {
-                  createMutation.mutate(data);
+                  createMutation.mutate(submitData);
                 }
               }} 
               isLoading={createMutation.isPending || updateMutation.isPending} 
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md w-full">
+          <DialogHeader>
+            <DialogTitle>View Skill Details</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {viewItem && (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  {(() => {
+                    const IconComp = viewItem.icon ? (devIcons as any)[viewItem.icon] : null;
+                    return IconComp ? <IconComp className="w-10 h-10 shrink-0" /> : <div className="w-10 h-10 shrink-0 bg-muted rounded-md" />;
+                  })()}
+                  <div>
+                    <h3 className="font-bold text-xl">{viewItem.name}</h3>
+                    <p className="text-muted-foreground">{viewItem.category.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div>
+                    <span className="font-medium block text-sm">Proficiency</span>
+                    <span className="text-muted-foreground">{viewItem.proficiency} / 100</span>
+                  </div>
+                  <div>
+                    <span className="font-medium block text-sm">Visibility</span>
+                    <span className="text-muted-foreground">{viewItem.showInSkills ? 'Visible on Portfolio' : 'Hidden'}</span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
