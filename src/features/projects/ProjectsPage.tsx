@@ -140,7 +140,12 @@ export default function ProjectsPage() {
           {isLoading ? (
             <p className="text-muted-foreground text-center">Loading projects...</p>
           ) : projects?.length === 0 ? (
-            <p className="text-muted-foreground text-center">No projects found.</p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No projects found.</p>
+              <Button variant="outline" onClick={() => { setEditingId(null); setIsFormOpen(true); }}>
+                Add Project
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {projects?.map((project: any) => (
@@ -201,8 +206,8 @@ export default function ProjectsPage() {
             {viewItem && (
               <>
                 <div className="flex flex-col sm:flex-row gap-6">
-                  {viewItem.thumbnail ? (
-                    <img src={viewItem.thumbnail} alt={viewItem.title} className="w-full sm:w-48 h-auto object-cover rounded-md" />
+                  {viewItem.thumbnail?.url ? (
+                    <img src={viewItem.thumbnail.url} alt={viewItem.title} className="w-full sm:w-48 h-auto object-cover rounded-md" />
                   ) : (
                     <div className="w-full sm:w-48 h-32 bg-muted flex items-center justify-center rounded-md">No Image</div>
                   )}
