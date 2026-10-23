@@ -109,7 +109,14 @@ export default function ExperiencePage() {
                       })()}
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-lg truncate">{item.role || item.position}</h3>
-                        <p className="text-muted-foreground font-medium truncate">{item.company}</p>
+                        <div className="flex items-center text-muted-foreground font-medium truncate">
+                          {item.company}
+                          {item.companyUrl && (
+                            <a href={item.companyUrl} target="_blank" rel="noreferrer" className="inline-flex items-center ml-2 text-primary hover:text-primary/80 transition-colors" title="Visit Company Website">
+                              <lucideIcons.ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="mt-3 text-sm text-muted-foreground">
@@ -169,7 +176,14 @@ export default function ExperiencePage() {
                   })()}
                   <div>
                     <h3 className="font-bold text-xl">{viewItem.role || viewItem.position}</h3>
-                    <p className="text-muted-foreground">{viewItem.company}</p>
+                    <div className="flex items-center text-muted-foreground">
+                      {viewItem.company}
+                      {viewItem.companyUrl && (
+                        <a href={viewItem.companyUrl} target="_blank" rel="noreferrer" className="inline-flex items-center ml-2 text-primary hover:text-primary/80 transition-colors">
+                          <lucideIcons.ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
                 

@@ -77,8 +77,8 @@ function AppSidebar() {
         <div className="flex flex-col gap-4 group-data-[collapsible=icon]:items-center">
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9 shrink-0">
-              <AvatarImage src={user?.avatar} alt={user?.name} />
-              <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+              <AvatarImage src={user?.profileImage?.url || user?.avatar || undefined} alt={user?.name || 'Admin'} />
+              <AvatarFallback>{user?.name?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
               <span className="text-sm font-medium truncate">{user?.name || 'Admin'}</span>
@@ -112,8 +112,8 @@ function Topbar() {
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="relative h-8 w-8 rounded-full" />}>
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.avatar} alt={user?.name} />
-              <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+              <AvatarImage src={user?.profileImage?.url || user?.avatar || undefined} alt={user?.name || 'Admin'} />
+              <AvatarFallback>{user?.name?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">

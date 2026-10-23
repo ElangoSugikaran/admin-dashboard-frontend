@@ -1,5 +1,15 @@
 import { apiClient } from '@/lib/api';
 
+export interface ProjectPhase {
+  id?: string;
+  projectId?: string;
+  name: string;
+  tasks: string[];
+  startDate?: string | null;
+  endDate?: string | null;
+  sortOrder?: number;
+}
+
 export interface Project {
   id: string;
   slug: string;
@@ -25,6 +35,8 @@ export interface Project {
   category?: any;
   thumbnail?: any;
   technologies?: any[];
+  media?: any[];
+  phases?: ProjectPhase[];
   
   createdAt?: string;
   updatedAt?: string;

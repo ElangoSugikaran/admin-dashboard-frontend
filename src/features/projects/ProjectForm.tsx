@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Calendar, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { skillsService } from '@/services/api/skillsService';
 import { mediaService } from '@/services/api/mediaService';
@@ -23,6 +24,34 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+const projectMediaSchema = z.object({
+  mediaId: z.string(),
+  url: z.string().optional(),
+  role: z.enum(['SCREENSHOT', 'DIAGRAM', 'DEMO']),
+  group: z.string().optional().or(z.literal('')),
+  caption: z.string().optional().or(z.literal('')),
+  sortOrder: z.number().int().default(0)
+});
+
+export const projectPhaseSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Phase name is required'),
+  tasks: z.array(z.object({ value: z.string().min(1) })),
+  startDate: z.string().optional().or(z.literal('')),
+  endDate: z.string().optional().or(z.literal('')),
+  sortOrder: z.number().int().default(0)
+});
 
 export const projectSchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
@@ -53,7 +82,10 @@ export const projectSchema = z.object({
   thumbnail: z.any().optional(),
   
   // Selected technology IDs
-  technologyIds: z.array(z.string())
+  technologyIds: z.array(z.string()),
+
+  phases: z.array(projectPhaseSchema).optional().default([]),
+  projectMedia: z.array(projectMediaSchema).optional().default([])
 });
 
 export type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -64,7 +96,70 @@ interface ProjectFormProps {
   isLoading?: boolean;
 }
 
+function PhaseTasksEditor({ control, phaseIndex }: { control: any; phaseIndex: number }) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `phases.${phaseIndex}.tasks`
+  });
+
+  return (
+    <div className="space-y-2 mt-3 pt-3 border-t">
+      <div className="flex items-center justify-between">
+        <FormLabel className="text-xs font-semibold text-foreground">Tasks / Work Breakdown</FormLabel>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => append({ value: '' })}
+        >
+          <Plus className="w-3.5 h-3.5 mr-1" /> Add Task
+        </Button>
+      </div>
+      {fields.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic py-1">No tasks added to this phase yet.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {fields.map((taskField, taskIdx) => (
+            <div key={taskField.id} className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-mono w-3 text-center">•</span>
+              <FormField
+                control={control}
+                name={`phases.${phaseIndex}.tasks.${taskIdx}.value`}
+                render={({ field }) => (
+                  <FormItem className="flex-1 m-0">
+                    <FormControl>
+                      <Input
+                        placeholder="e.g. Requirement Gathering, Database Design..."
+                        className="h-8 text-xs"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => remove(taskIdx)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [mediaToDelete, setMediaToDelete] = useState<{ index: number; mediaId?: string } | null>(null);
+  const [isDeletingMedia, setIsDeletingMedia] = useState(false);
+
   // Fetch available technologies (skills) to select from
   const { data: technologies } = useQuery({
     queryKey: ['skills'],
@@ -72,7 +167,7 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
   });
 
   const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectSchema),
+    resolver: zodResolver(projectSchema) as any,
     defaultValues: {
       slug: initialValues?.slug || '',
       title: initialValues?.title || '',
@@ -93,6 +188,8 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
       categoryId: initialValues?.categoryId || '',
       thumbnail: initialValues?.thumbnail || null,
       technologyIds: initialValues?.technologyIds || [],
+      phases: initialValues?.phases || [],
+      projectMedia: initialValues?.projectMedia || [],
     },
   });
 
@@ -111,6 +208,36 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
     name: "skillsDemonstrated"
   });
 
+  const { fields: mediaFields, append: appendMedia, remove: removeMedia } = useFieldArray({
+    control: form.control,
+    name: "projectMedia"
+  });
+
+  const { fields: phaseFields, append: appendPhase, remove: removePhase } = useFieldArray({
+    control: form.control,
+    name: "phases"
+  });
+
+  const handleMediaUpload = async (files: File[]) => {
+    setIsUploading(true);
+    for (const file of files) {
+      try {
+        const uploaded = await mediaService.uploadFile(file);
+        appendMedia({ 
+          mediaId: uploaded.id, 
+          url: uploaded.url, 
+          role: 'SCREENSHOT', 
+          group: '', 
+          caption: '', 
+          sortOrder: form.getValues('projectMedia')?.length || 0 
+        });
+      } catch (err) {
+        console.error("Upload failed for", file.name, err);
+      }
+    }
+    setIsUploading(false);
+  };
+
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.target instanceof HTMLInputElement && e.key === 'Enter') {
       e.preventDefault();
@@ -126,7 +253,9 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="mb-4 flex flex-wrap h-auto">
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="media">Media & Files</TabsTrigger>
             <TabsTrigger value="details">Details & Tech Stack</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline & Gantt</TabsTrigger>
             <TabsTrigger value="publishing">Publishing</TabsTrigger>
           </TabsList>
 
@@ -223,6 +352,117 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
             </div>
           </TabsContent>
 
+          {/* MEDIA & FILES */}
+          <TabsContent value="media" className="space-y-4 focus-visible:outline-none">
+            <div className="border p-4 rounded-lg bg-card shadow-sm space-y-4">
+              <div className="flex justify-between items-center mb-4">
+                <FormLabel className="text-base font-semibold">Additional Media (Screenshots & Diagrams)</FormLabel>
+              </div>
+
+              <div 
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isUploading ? 'bg-muted/50 border-muted' : 'border-primary/20 hover:bg-primary/5 cursor-pointer'}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (isUploading) return;
+                  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+                  if (files.length > 0) handleMediaUpload(files);
+                }}
+                onClick={() => {
+                  if (isUploading) return;
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.multiple = true;
+                  input.accept = 'image/*,video/*';
+                  input.onchange = (e) => {
+                    const files = Array.from((e.target as HTMLInputElement).files || []);
+                    if (files.length > 0) handleMediaUpload(files);
+                  };
+                  input.click();
+                }}
+              >
+                {isUploading ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-sm font-medium text-muted-foreground">Uploading multiple files to Cloudinary...</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <Plus className="w-6 h-6 text-primary" />
+                    </div>
+                    <p className="text-base font-medium mb-1">Click or drag & drop to upload</p>
+                    <p className="text-xs text-muted-foreground">Select multiple images or videos at once</p>
+                  </div>
+                )}
+              </div>
+
+              {mediaFields.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No additional media attached to this project.</p>
+              ) : (
+                <div className="space-y-4">
+                  {mediaFields.map((field: any, index) => (
+                    <div key={field.id} className="flex gap-4 items-start border p-3 rounded-md">
+                      <input type="hidden" {...form.register(`projectMedia.${index}.mediaId` as const)} />
+                      <input type="hidden" {...form.register(`projectMedia.${index}.url` as const)} />
+                      <input type="hidden" {...form.register(`projectMedia.${index}.sortOrder` as const)} />
+                      
+                      <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
+                         {field.url ? <img src={field.url} alt="Media preview" className="w-full h-full object-cover" /> : 'No Preview'}
+                      </div>
+                      
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <FormField
+                          control={form.control}
+                          name={`projectMedia.${index}.role` as any}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Role</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value || "SCREENSHOT"}>
+                                <FormControl><SelectTrigger className="h-8"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                  <SelectItem value="SCREENSHOT">Screenshot</SelectItem>
+                                  <SelectItem value="DIAGRAM">Diagram</SelectItem>
+                                  <SelectItem value="DEMO">Demo Video</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`projectMedia.${index}.caption` as any}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Caption</FormLabel>
+                              <FormControl><Input className="h-8" placeholder="e.g. Dashboard View" {...field} value={field.value || ""} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`projectMedia.${index}.group` as any}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Group (Tab Name)</FormLabel>
+                              <FormControl><Input className="h-8" placeholder="e.g. Client-side" {...field} value={field.value || ""} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <Button type="button" variant="ghost" size="icon" className="mt-6" onClick={() => {
+                        setMediaToDelete({ index, mediaId: field.mediaId });
+                      }}>
+                        <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           {/* DETAILS & TECH */}
           <TabsContent value="details" className="space-y-6 focus-visible:outline-none">
              <div className="border p-4 rounded-lg space-y-4">
@@ -237,7 +477,7 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
                         className="cursor-pointer"
                         onClick={() => {
                           if (isSelected) {
-                            form.setValue('technologyIds', selectedTechs.filter(id => id !== tech.id));
+                            form.setValue('technologyIds', selectedTechs.filter((id: string) => id !== tech.id));
                           } else {
                             form.setValue('technologyIds', [...selectedTechs, tech.id]);
                           }
@@ -294,6 +534,147 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
             </div>
           </TabsContent>
 
+          {/* TIMELINE & GANTT */}
+          <TabsContent value="timeline" className="space-y-4 focus-visible:outline-none">
+            <div className="border p-4 rounded-lg bg-card shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+                <div>
+                  <FormLabel className="text-base font-semibold">Project Schedule & Gantt Phases</FormLabel>
+                  <p className="text-xs text-muted-foreground">
+                    Define work breakdown phases, sub-tasks, and timelines to showcase an engineering Gantt chart.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendPhase({
+                    name: '',
+                    tasks: [{ value: '' }],
+                    startDate: '',
+                    endDate: '',
+                    sortOrder: phaseFields.length
+                  })}
+                >
+                  <Plus className="mr-1.5 w-4 h-4" /> Add Phase
+                </Button>
+              </div>
+
+              {phaseFields.length === 0 ? (
+                <div className="text-center py-8 border border-dashed rounded-md bg-muted/20">
+                  <Calendar className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm font-medium">No Gantt phases defined for this project.</p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-4">
+                    Optional: Ideal for university final projects, capstone studies, or milestone-based client deliverables.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => appendPhase({
+                      name: '',
+                      tasks: [{ value: '' }],
+                      startDate: '',
+                      endDate: '',
+                      sortOrder: 0
+                    })}
+                  >
+                    <Plus className="mr-1.5 w-4 h-4" /> Add First Phase
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {phaseFields.map((field, index) => {
+                    const sDate = form.watch(`phases.${index}.startDate`);
+                    const eDate = form.watch(`phases.${index}.endDate`);
+                    let durationDays: number | null = null;
+                    if (sDate && eDate) {
+                      const d1 = new Date(sDate).getTime();
+                      const d2 = new Date(eDate).getTime();
+                      if (!isNaN(d1) && !isNaN(d2)) {
+                        durationDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24));
+                      }
+                    }
+
+                    return (
+                      <div key={field.id} className="border p-4 rounded-lg bg-muted/20 space-y-3 relative">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-1">
+                            <Badge variant="outline" className="font-mono text-xs">
+                              Phase {index + 1}
+                            </Badge>
+                            <FormField
+                              control={form.control}
+                              name={`phases.${index}.name`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1 m-0">
+                                  <FormControl>
+                                    <Input
+                                      placeholder="Phase Name (e.g. Initial Planning, System Design)"
+                                      className="font-semibold h-9"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => removePhase(index)}
+                            title="Delete Phase"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <FormField
+                            control={form.control}
+                            name={`phases.${index}.startDate`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">Start Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" className="h-8 text-xs" {...field} value={field.value || ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`phases.${index}.endDate`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">End Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" className="h-8 text-xs" {...field} value={field.value || ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex flex-col justify-end">
+                            <FormLabel className="text-xs text-muted-foreground mb-1">Calculated Duration</FormLabel>
+                            <div className="h-8 flex items-center px-3 rounded-md border bg-background text-xs font-medium text-muted-foreground">
+                              <Clock className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                              {durationDays !== null ? `${durationDays} Days` : 'Set dates'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <PhaseTasksEditor control={form.control} phaseIndex={index} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           {/* PUBLISHING */}
           <TabsContent value="publishing" className="space-y-4 focus-visible:outline-none">
             <FormField control={form.control} name="featured" render={({ field }) => (
@@ -329,6 +710,43 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={!!mediaToDelete} onOpenChange={(open) => !open && setMediaToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Media?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete this media? This will remove it from Cloudinary and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingMedia}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeletingMedia}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (mediaToDelete) {
+                  setIsDeletingMedia(true);
+                  try {
+                    if (mediaToDelete.mediaId) {
+                      await mediaService.deleteFile(mediaToDelete.mediaId);
+                    }
+                    removeMedia(mediaToDelete.index);
+                  } catch(err) {
+                    console.error("Failed to delete from Cloudinary/DB", err);
+                  } finally {
+                    setIsDeletingMedia(false);
+                    setMediaToDelete(null);
+                  }
+                }
+              }}
+            >
+              {isDeletingMedia ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Form>
   );
 }

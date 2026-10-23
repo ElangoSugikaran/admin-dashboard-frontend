@@ -6,6 +6,9 @@ export interface Skill {
   name: string;
   proficiency?: number;
   icon?: string;
+  category?: 'FRONTEND' | 'BACKEND' | 'FRAMEWORK' | 'DATABASE' | 'CSS_FRAMEWORK' | 'DESIGN_TOOL' | 'SERVICE' | 'TOOL' | string;
+  showInSkills?: boolean;
+  sortOrder?: number;
   createdAt?: string;
   updatedAt?: string;
 }

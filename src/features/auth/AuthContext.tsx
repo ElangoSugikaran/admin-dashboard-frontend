@@ -1,13 +1,13 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminService } from '@/services/api/adminService';
+import { adminService, type AdminProfile } from '@/services/api/adminService';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (userData: any) => void;
   logout: () => void;
-  user: { name: string; email: string; avatar: string } | null;
+  user: (AdminProfile & { avatar?: string }) | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
