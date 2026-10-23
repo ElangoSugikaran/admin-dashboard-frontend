@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { ProjectForm, type ProjectFormValues } from './ProjectForm';
+import { ProjectGanttTable } from '@/components/ui/project-gantt-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -78,9 +79,16 @@ export default function ProjectsPage() {
       // and map empty strings to null for optional fields to prevent DB errors.
       const payload = {
         ...values,
-        objectives: values.objectives.map(o => o.value),
-        features: values.features.map(f => f.value),
-        skillsDemonstrated: values.skillsDemonstrated.map(s => s.value),
+        objectives: values.objectives.map((o: any) => o.value),
+        features: values.features.map((f: any) => f.value),
+        skillsDemonstrated: values.skillsDemonstrated.map((s: any) => s.value),
+        phases: values.phases?.map((p: any, idx: number) => ({
+          name: p.name,
+          tasks: p.tasks.map((t: any) => t.value).filter(Boolean),
+          startDate: p.startDate ? new Date(p.startDate).toISOString() : null,
+          endDate: p.endDate ? new Date(p.endDate).toISOString() : null,
+          sortOrder: p.sortOrder ?? idx
+        })) || [],
         categoryId: values.categoryId === "" ? null : values.categoryId,
         githubUrl: values.githubUrl === "" ? null : values.githubUrl,
         liveUrl: values.liveUrl === "" ? null : values.liveUrl,
@@ -88,7 +96,14 @@ export default function ProjectsPage() {
         aim: values.aim === "" ? null : values.aim,
         startedAt: values.startedAt === "" ? null : values.startedAt,
         completedAt: values.completedAt === "" ? null : values.completedAt,
-        thumbnailId
+        thumbnailId,
+        projectMedia: values.projectMedia?.map((m: any) => ({
+          mediaId: m.mediaId,
+          role: m.role,
+          group: m.group === "" ? null : m.group,
+          caption: m.caption === "" ? null : m.caption,
+          sortOrder: m.sortOrder
+        })) || []
       };
 
       // Strip out the raw File object from the payload before sending
@@ -119,6 +134,22 @@ export default function ProjectsPage() {
     features: selectedProject.features?.map((v: string) => ({ value: v })) || [],
     skillsDemonstrated: selectedProject.skillsDemonstrated?.map((v: string) => ({ value: v })) || [],
     technologyIds: selectedProject.technologies?.map((t: any) => t.id) || [],
+    phases: selectedProject.phases?.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      tasks: Array.isArray(p.tasks) ? p.tasks.map((t: string) => ({ value: t })) : [],
+      startDate: p.startDate ? new Date(p.startDate).toISOString().split('T')[0] : '',
+      endDate: p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : '',
+      sortOrder: p.sortOrder ?? 0
+    })) || [],
+    projectMedia: selectedProject.media?.map((m: any) => ({
+      mediaId: m.mediaId,
+      url: m.media?.url,
+      role: m.role,
+      group: m.group || '',
+      caption: m.caption || '',
+      sortOrder: m.sortOrder
+    })) || [],
   } : undefined;
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -240,6 +271,79 @@ export default function ProjectsPage() {
                   )}
                 </div>
 
+                                {viewItem.category && (
+                  <div>
+                    <span className="block font-medium text-sm mb-1 text-muted-foreground">Category</span>
+                    <Badge variant="outline">{viewItem.category.name}</Badge>
+                  </div>
+                )}
+
+                {viewItem.technologies && viewItem.technologies.length > 0 && (
+                  <div>
+                    <span className="block font-medium text-sm mb-2 text-muted-foreground">Technologies</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {viewItem.technologies.map((t: any) => (
+                        <Badge key={t.id || t.name} variant="secondary" className="text-xs">
+                          {t.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {viewItem.aim && (
+                  <div className="bg-muted/40 p-3 rounded-lg border">
+                    <span className="block font-semibold text-sm mb-1 text-foreground">Aim & Objective</span>
+                    <p className="text-sm text-muted-foreground">{viewItem.aim}</p>
+                  </div>
+                )}
+
+                {viewItem.methodology && (
+                  <div className="bg-muted/40 p-3 rounded-lg border">
+                    <span className="block font-semibold text-sm mb-1 text-foreground">Methodology & Implementation</span>
+                    <p className="text-sm text-muted-foreground">{viewItem.methodology}</p>
+                  </div>
+                )}
+
+                {viewItem.objectives && viewItem.objectives.length > 0 && (
+                  <div className="border p-4 rounded-lg bg-card">
+                    <span className="block font-semibold text-sm mb-2 text-foreground">Objectives</span>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                      {viewItem.objectives.map((obj: string, i: number) => (
+                        <li key={i}>{obj}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {viewItem.features && viewItem.features.length > 0 && (
+                  <div className="border p-4 rounded-lg bg-card">
+                    <span className="block font-semibold text-sm mb-2 text-foreground">Core Features</span>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                      {viewItem.features.map((feat: string, i: number) => (
+                        <li key={i}>{feat}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {viewItem.skillsDemonstrated && viewItem.skillsDemonstrated.length > 0 && (
+                  <div className="border p-4 rounded-lg bg-card">
+                    <span className="block font-semibold text-sm mb-2 text-foreground">Skills & Innovations Demonstrated</span>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                      {viewItem.skillsDemonstrated.map((skill: string, i: number) => (
+                        <li key={i}>{skill}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {viewItem.phases && viewItem.phases.length > 0 && (
+                  <div className="border p-4 rounded-lg bg-card/40 shadow-sm">
+                    <ProjectGanttTable phases={viewItem.phases} />
+                  </div>
+                )}
+
                 {viewItem.description && (
                   <div>
                     <span className="block font-medium text-sm mb-2">Full Description</span>
@@ -247,6 +351,28 @@ export default function ProjectsPage() {
                       className="prose prose-sm dark:prose-invert max-w-none border rounded-md p-4 bg-muted/20"
                       dangerouslySetInnerHTML={{ __html: viewItem.description }}
                     />
+                  </div>
+                )}
+
+                {viewItem.media && viewItem.media.length > 0 && (
+                  <div>
+                    <span className="block font-medium text-sm mb-2">Attached Media</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {viewItem.media.map((m: any, idx: number) => (
+                        <div key={idx} className="border rounded-md overflow-hidden bg-card shadow-sm">
+                          {m.media?.url ? (
+                             <img src={m.media.url} alt={m.caption || m.role} className="w-full h-32 object-cover" />
+                          ) : (
+                             <div className="w-full h-32 bg-muted flex items-center justify-center text-xs">No Preview</div>
+                          )}
+                          <div className="p-2">
+                            <Badge variant="secondary" className="text-[10px] mb-1">{m.role}</Badge>
+                            {m.group && <p className="text-xs text-muted-foreground">Tab: {m.group}</p>}
+                            {m.caption && <p className="text-xs font-medium truncate" title={m.caption}>{m.caption}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>

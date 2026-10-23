@@ -14,6 +14,7 @@ const experienceSchema = z.object({
   endDate: z.string().optional(),
   description: z.string().optional(),
   icon: z.string().optional().nullable(),
+  companyUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")).nullable(),
 });
 
 type ExperienceFormValues = z.infer<typeof experienceSchema>;
@@ -34,19 +35,29 @@ export function ExperienceForm({ initialValues, onSubmit, isLoading }: Experienc
       endDate: initialValues?.endDate || '',
       description: initialValues?.description || '',
       icon: initialValues?.icon || null,
+      companyUrl: initialValues?.companyUrl || '',
     },
   });
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <FormField
-          control={form.control}
-          name="company"
-          render={({ field }) => (
-            <FormItem><FormLabel>Company</FormLabel><FormControl><Input placeholder="Google" {...field} /></FormControl><FormMessage /></FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="company"
+            render={({ field }) => (
+              <FormItem><FormLabel>Company</FormLabel><FormControl><Input placeholder="Google" {...field} /></FormControl><FormMessage /></FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="companyUrl"
+            render={({ field }) => (
+              <FormItem><FormLabel>Company Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://google.com" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="role"

@@ -8,6 +8,39 @@ import { IconSelector } from '@/components/ui/icon-selector';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+export const SKILL_CATEGORIES = [
+  { value: 'FRONTEND', label: 'Frontend' },
+  { value: 'BACKEND', label: 'Backend' },
+  { value: 'FRAMEWORK', label: 'Framework' },
+  { value: 'DATABASE', label: 'Database' },
+  { value: 'CSS_FRAMEWORK', label: 'CSS Framework' },
+  { value: 'DESIGN_TOOL', label: 'Design Tool' },
+  { value: 'SERVICE', label: 'Service' },
+  { value: 'TOOL', label: 'Tool' },
+] as const;
+
+export const SKILL_CATEGORY_LABELS: Record<string, string> = {
+  FRONTEND: 'Frontend',
+  BACKEND: 'Backend',
+  FRAMEWORK: 'Framework',
+  DATABASE: 'Database',
+  CSS_FRAMEWORK: 'CSS Framework',
+  DESIGN_TOOL: 'Design Tool',
+  SERVICE: 'Service',
+  TOOL: 'Tool',
+};
+
+export function formatCategoryLabel(category?: string | null): string {
+  if (!category) return '';
+  if (SKILL_CATEGORY_LABELS[category]) {
+    return SKILL_CATEGORY_LABELS[category];
+  }
+  return category
+    .split('_')
+    .map((w) => (w.toUpperCase() === 'CSS' ? 'CSS' : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+    .join(' ');
+}
+
 const skillSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   category: z.enum([
@@ -62,17 +95,24 @@ export function SkillForm({ initialValues, onSubmit, isLoading }: SkillFormProps
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger className="w-full"><SelectValue placeholder="Category" /></SelectTrigger></FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={SKILL_CATEGORY_LABELS}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a category">
+                        {(val: any) => (val ? formatCategoryLabel(val) : 'Select a category')}
+                      </SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
                   <SelectContent>
-                    <SelectItem value="FRONTEND">Frontend</SelectItem>
-                    <SelectItem value="BACKEND">Backend</SelectItem>
-                    <SelectItem value="FRAMEWORK">Framework</SelectItem>
-                    <SelectItem value="DATABASE">Database</SelectItem>
-                    <SelectItem value="CSS_FRAMEWORK">CSS Framework</SelectItem>
-                    <SelectItem value="DESIGN_TOOL">Design Tool</SelectItem>
-                    <SelectItem value="SERVICE">Service (e.g. AWS)</SelectItem>
-                    <SelectItem value="TOOL">Tool (e.g. Git)</SelectItem>
+                    {SKILL_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

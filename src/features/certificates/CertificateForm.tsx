@@ -8,19 +8,30 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mediaService } from '@/services/api/mediaService';
 
+
 const certificateSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  issuingBody: z.string().min(1, 'Issuing Body is required'),
-  date: z.string().min(1, 'Date is required'),
+  title: z.string().min(1, 'Certificate title is required'),
+  issuingBody: z.string().optional(),
+  date: z.string().optional(),
   category: z.enum(['ACADEMIC', 'DIGITAL']),
-  credentialUrl: z.string().optional(),
-  file: z.any().optional(),
+  credentialUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  file: z
+    .any()
+    .refine(
+      (val) => {
+        if (!val) return false;
+        if (typeof val === 'object' && (val.id || val.url)) return true;
+        if (typeof val === 'string' && val.trim().length > 0) return true;
+        return false;
+      },
+      { message: 'Certificate file/image is required' }
+    ),
 });
 
 type CertificateFormValues = z.infer<typeof certificateSchema>;
 
 interface CertificateFormProps {
-  initialValues?: Partial<CertificateFormValues>;
+  initialValues?: Partial<CertificateFormValues> & { issuer?: string; name?: string; image?: any };
   onSubmit: (data: CertificateFormValues) => void;
   isLoading?: boolean;
 }
@@ -29,12 +40,12 @@ export function CertificateForm({ initialValues, onSubmit, isLoading }: Certific
   const form = useForm<CertificateFormValues>({
     resolver: zodResolver(certificateSchema),
     defaultValues: {
-      title: initialValues?.title || '',
-      issuingBody: initialValues?.issuingBody || '',
+      title: initialValues?.title || initialValues?.name || '',
+      issuingBody: initialValues?.issuingBody || initialValues?.issuer || '',
       date: initialValues?.date || '',
       category: initialValues?.category || 'ACADEMIC',
       credentialUrl: initialValues?.credentialUrl || '',
-      file: initialValues?.file || null,
+      file: initialValues?.file || initialValues?.image || null,
     },
   });
 
@@ -45,21 +56,45 @@ export function CertificateForm({ initialValues, onSubmit, isLoading }: Certific
           control={form.control}
           name="title"
           render={({ field }) => (
-            <FormItem><FormLabel>Certificate Title</FormLabel><FormControl><Input placeholder="AWS Certified Solutions Architect" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>
+                Certificate Title <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="AWS Certified Solutions Architect" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
         <FormField
           control={form.control}
           name="issuingBody"
           render={({ field }) => (
-            <FormItem><FormLabel>Issuing Body</FormLabel><FormControl><Input placeholder="Amazon Web Services" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>
+                Issuing Body <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Amazon Web Services, Coursera" {...field} value={field.value || ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
         <FormField
           control={form.control}
           name="date"
           render={({ field }) => (
-            <FormItem><FormLabel>Date Issued</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>
+                Date Issued <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+              </FormLabel>
+              <FormControl>
+                <Input type="month" {...field} value={field.value || ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
         <FormField
@@ -87,14 +122,35 @@ export function CertificateForm({ initialValues, onSubmit, isLoading }: Certific
           control={form.control}
           name="credentialUrl"
           render={({ field }) => (
-            <FormItem><FormLabel>Credential URL (Optional)</FormLabel><FormControl><Input placeholder="https://verify.com/..." {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>
+                Credential URL <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="https://verify.example.com/..." {...field} value={field.value || ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
         <FormField
           control={form.control}
           name="file"
           render={({ field }) => (
-            <FormItem><FormLabel>Certificate File</FormLabel><FormControl><FileUpload value={field.value} onChange={field.onChange} onUpload={mediaService.uploadFile} accept="image/*,application/pdf" /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>
+                Certificate File / Image <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <FileUpload 
+                  value={field.value} 
+                  onChange={field.onChange} 
+                  onUpload={mediaService.uploadFile} 
+                  accept="image/*,application/pdf" 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
         <div className="flex justify-end">

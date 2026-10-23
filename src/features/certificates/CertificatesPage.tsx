@@ -98,35 +98,51 @@ export default function CertificatesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {items?.map((item: any) => (
-                <div key={item.id} className="flex flex-col p-4 border rounded-md hover:bg-muted/50 transition-colors overflow-hidden">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1 pr-4">
-                      <h3 className="font-semibold text-lg truncate">{item.title || item.name}</h3>
-                      <p className="text-muted-foreground truncate">{item.issuingBody || item.issuer}</p>
+              {items?.map((item: any) => {
+                const imgUrl = item.image?.url || item.file?.url || item.imageUrl;
+                return (
+                  <div key={item.id} className="flex flex-col justify-between p-4 border rounded-md hover:bg-muted/50 transition-colors overflow-hidden gap-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {imgUrl ? (
+                          <img 
+                            src={imgUrl} 
+                            alt={item.title || item.name} 
+                            className="w-12 h-12 object-cover rounded border flex-shrink-0 bg-muted" 
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-base truncate" title={item.title || item.name}>
+                            {item.title || item.name}
+                          </h3>
+                          <p className="text-muted-foreground text-sm truncate">
+                            {item.issuingBody || item.issuer || 'No issuer specified'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewItem(item)} title="View">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(item)} title="Edit">
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setItemToDelete(item)} title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewItem(item)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(item)}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setItemToDelete(item)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="pt-2 border-t text-xs flex items-center justify-between text-muted-foreground">
+                      <span>{item.date ? `Issued: ${item.date}` : 'Date not specified'}</span>
+                      {item.category === 'DIGITAL' ? (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-medium">E-Certificate</span>
+                      ) : (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-medium">Primary / Academic</span>
+                      )}
                     </div>
                   </div>
-                  <div className="mt-3 text-sm flex items-center justify-between text-muted-foreground">
-                    <span>Issued: {item.date}</span>
-                    {item.category === 'DIGITAL' ? (
-                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-medium">E-Certificate</span>
-                    ) : (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-medium">Primary / Academic</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -140,8 +156,14 @@ export default function CertificatesPage() {
               key={selectedItem?.id || 'new'}
               initialValues={selectedItem ? {
                 ...selectedItem,
+                title: selectedItem.title || selectedItem.name || '',
+                issuingBody: selectedItem.issuingBody || selectedItem.issuer || '',
+                date: selectedItem.date || (selectedItem.issuedAt ? selectedItem.issuedAt.split('T')[0].substring(0, 7) : ''),
+                credentialUrl: selectedItem.credentialUrl || '',
+                category: selectedItem.category || 'ACADEMIC',
                 file: selectedItem.image ? { id: selectedItem.image.id, url: selectedItem.image.url } 
                      : selectedItem.file?.url ? selectedItem.file 
+                     : selectedItem.imageId ? { id: selectedItem.imageId, url: selectedItem.imageUrl || '' }
                      : null,
               } : undefined}
               onSubmit={(data) => {
@@ -168,7 +190,7 @@ export default function CertificatesPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-xl">{viewItem.title || viewItem.name}</h3>
-                    <p className="text-muted-foreground">{viewItem.issuingBody || viewItem.issuer}</p>
+                    <p className="text-muted-foreground">{viewItem.issuingBody || viewItem.issuer || 'No issuer specified'}</p>
                   </div>
                   {viewItem.category === 'DIGITAL' ? (
                     <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-medium">E-Certificate</span>
@@ -180,7 +202,7 @@ export default function CertificatesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="font-medium block text-sm">Date Issued</span>
-                    <span className="text-muted-foreground">{viewItem.date}</span>
+                    <span className="text-muted-foreground">{viewItem.date || 'Not specified'}</span>
                   </div>
                 </div>
 
@@ -193,18 +215,16 @@ export default function CertificatesPage() {
                   </div>
                 )}
 
-                {viewItem.file && (
+                {(viewItem.image?.url || viewItem.file?.url || viewItem.imageUrl) && (
                   <div>
                     <span className="font-medium block text-sm mb-2">Certificate Document</span>
-                    {viewItem.file.url ? (
-                      <div className="border rounded-md overflow-hidden bg-muted flex items-center justify-center p-2">
-                        <img src={viewItem.file.url} alt="Certificate" className="max-h-[300px] object-contain" />
-                      </div>
-                    ) : (
-                      <div className="border rounded-md p-4 text-center text-muted-foreground bg-muted/20">
-                        {typeof viewItem.file === 'string' ? viewItem.file : 'Document available'}
-                      </div>
-                    )}
+                    <div className="border rounded-md overflow-hidden bg-muted flex items-center justify-center p-2">
+                      <img 
+                        src={viewItem.image?.url || viewItem.file?.url || viewItem.imageUrl} 
+                        alt="Certificate" 
+                        className="max-h-[350px] w-auto object-contain rounded" 
+                      />
+                    </div>
                   </div>
                 )}
               </>

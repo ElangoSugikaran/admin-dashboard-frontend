@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { skillsService } from '@/services/api/skillsService';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
-import { SkillForm } from './SkillForm';
+import { SkillForm, formatCategoryLabel } from './SkillForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import * as devIcons from '@dev.icons/react';
+import { getDevIconComponent } from '@/components/ui/icon-selector';
 
 export default function SkillsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -105,14 +105,14 @@ export default function SkillsPage() {
                   <div className="min-w-0 flex-1 pr-4">
                     <div className="flex items-center gap-2">
                       {(() => {
-                        const IconComp = item.icon ? (devIcons as any)[item.icon] : null;
+                        const IconComp = getDevIconComponent(item.icon);
                         return IconComp ? <IconComp className="w-5 h-5 shrink-0" /> : null;
                       })()}
                       <h3 className="font-semibold truncate">{item.name}</h3>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge variant="outline">
-                        {item.category.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}
+                        {formatCategoryLabel(item.category)}
                       </Badge>
                       {item.showInSkills ? (
                         <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">
@@ -175,12 +175,12 @@ export default function SkillsPage() {
               <>
                 <div className="flex items-center gap-3 mb-4">
                   {(() => {
-                    const IconComp = viewItem.icon ? (devIcons as any)[viewItem.icon] : null;
+                    const IconComp = getDevIconComponent(viewItem.icon);
                     return IconComp ? <IconComp className="w-10 h-10 shrink-0" /> : <div className="w-10 h-10 shrink-0 bg-muted rounded-md" />;
                   })()}
                   <div>
                     <h3 className="font-bold text-xl">{viewItem.name}</h3>
-                    <p className="text-muted-foreground">{viewItem.category.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
+                    <p className="text-muted-foreground">{formatCategoryLabel(viewItem.category)}</p>
                   </div>
                 </div>
 
