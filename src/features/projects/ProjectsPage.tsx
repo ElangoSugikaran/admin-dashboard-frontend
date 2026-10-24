@@ -156,54 +156,58 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">Manage your portfolio projects.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Projects</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage and curate your portfolio projects.</p>
         </div>
-        <Button onClick={() => { setEditingId(null); setIsFormOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Project
+        <Button onClick={() => { setEditingId(null); setIsFormOpen(true); }} className="self-start sm:self-auto gap-2">
+          <Plus className="h-4 w-4" /> Add Project
         </Button>
       </div>
 
-      <div className="border rounded-lg bg-card text-card-foreground shadow-sm">
-        <div className="p-6">
+      <div className="border border-border/80 rounded-xl bg-card text-card-foreground shadow-xs">
+        <div className="p-4 sm:p-6">
           {isLoading ? (
-            <p className="text-muted-foreground text-center">Loading projects...</p>
+            <p className="text-muted-foreground text-center py-8">Loading projects...</p>
           ) : projects?.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No projects found.</p>
               <Button variant="outline" onClick={() => { setEditingId(null); setIsFormOpen(true); }}>
-                Add Project
+                Add First Project
               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {projects?.map((project: any) => (
-                <div key={project.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-md hover:bg-muted/50 transition-colors">
+                <div key={project.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-border/80 rounded-xl hover:bg-muted/40 transition-all shadow-xs">
                   {project.thumbnail?.url ? (
-                    <img src={project.thumbnail.url} alt={project.title} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
+                    <img src={project.thumbnail.url} alt={project.title} className="w-full sm:w-24 h-36 sm:h-24 object-cover rounded-lg shrink-0" />
                   ) : (
-                    <div className="w-24 h-24 bg-muted flex items-center justify-center rounded-md flex-shrink-0 text-muted-foreground text-xs text-center p-2">
+                    <div className="w-full sm:w-24 h-24 bg-muted/60 flex items-center justify-center rounded-lg shrink-0 text-muted-foreground text-xs text-center p-2 border border-border/40">
                       No Image
                     </div>
                   )}
                   
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg truncate">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{project.shortDescription}</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <Badge variant={project.status === 'PUBLISHED' ? 'default' : 'secondary'}>
+                  <div className="flex-1 min-w-0 w-full sm:w-auto">
+                    <h3 className="font-semibold text-base sm:text-lg truncate text-foreground">{project.title}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-0.5">{project.shortDescription}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <Badge variant={project.status === 'PUBLISHED' ? 'default' : 'secondary'} className="text-[11px]">
                         {project.status}
                       </Badge>
-                      {project.featured && <Badge variant="outline" className="border-yellow-500 text-yellow-600">Featured</Badge>}
+                      {project.featured && (
+                        <Badge variant="outline" className="border-amber-500/40 text-amber-500 text-[11px] bg-amber-500/10">
+                          Featured
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
-                    <Button variant="secondary" size="sm" onClick={() => setViewItem(project)}>View</Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(project)}>Edit</Button>
-                    <Button variant="destructive" size="sm" onClick={() => setProjectToDelete(project)}>Delete</Button>
+                  <div className="flex flex-wrap sm:flex-nowrap gap-2 mt-2 sm:mt-0 w-full sm:w-auto shrink-0 justify-end">
+                    <Button variant="secondary" size="sm" onClick={() => setViewItem(project)} className="flex-1 sm:flex-initial text-xs">View</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(project)} className="flex-1 sm:flex-initial text-xs">Edit</Button>
+                    <Button variant="destructive" size="sm" onClick={() => setProjectToDelete(project)} className="flex-1 sm:flex-initial text-xs">Delete</Button>
                   </div>
                 </div>
               ))}

@@ -80,13 +80,13 @@ export default function EducationPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Education</h1>
-          <p className="text-muted-foreground mt-1">Manage your educational background.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Education</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your educational background and degrees.</p>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" /> Add Education
+        <Button onClick={openCreateDialog} className="self-start sm:self-auto gap-2">
+          <Plus className="h-4 w-4" /> Add Education
         </Button>
       </div>
 
@@ -177,7 +177,7 @@ export default function EducationPage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <span className="font-medium block text-sm">Start Date/Year</span>
                     <span className="text-muted-foreground">{viewItem.startDate}</span>

@@ -3,6 +3,7 @@ import { router } from './routes';
 import { AuthProvider } from './features/auth/AuthContext';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useTheme } from './store/themeStore';
 
 // Create a query client instance for the app
 const queryClient = new QueryClient({
@@ -14,13 +15,21 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppContent() {
+  const { resolvedTheme } = useTheme();
+
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+      <Toaster position="top-right" richColors theme={resolvedTheme} />
+    </AuthProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RouterProvider router={router} />
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
+      <AppContent />
     </QueryClientProvider>
   );
 }

@@ -185,9 +185,9 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Avatar Section */}
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <div className="h-24 w-24 rounded-full border-2 border-border overflow-hidden bg-muted flex items-center justify-center text-2xl font-bold">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="relative group shrink-0">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-border overflow-hidden bg-muted flex items-center justify-center text-xl sm:text-2xl font-bold">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
@@ -209,7 +209,7 @@ export default function ProfilePage() {
                 accept="image/*"
                 className="hidden"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
