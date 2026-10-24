@@ -80,12 +80,14 @@ export default function ExperiencePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Experience</h1>
-          <p className="text-muted-foreground mt-1">Manage your professional experience.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Experience</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your professional career and work history.</p>
         </div>
-        <Button onClick={openCreateDialog}><Plus className="mr-2 h-4 w-4" /> Add Experience</Button>
+        <Button onClick={openCreateDialog} className="self-start sm:self-auto gap-2">
+          <Plus className="h-4 w-4" /> Add Experience
+        </Button>
       </div>
 
       <div className="border rounded-lg bg-card text-card-foreground shadow-sm">
@@ -187,7 +189,7 @@ export default function ExperiencePage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <span className="font-medium block text-sm">Start Date</span>
                     <span className="text-muted-foreground">{viewItem.startDate}</span>

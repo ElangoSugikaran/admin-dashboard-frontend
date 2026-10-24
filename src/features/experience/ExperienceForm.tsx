@@ -42,7 +42,7 @@ export function ExperienceForm({ initialValues, onSubmit, isLoading }: Experienc
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="company"
@@ -65,7 +65,7 @@ export function ExperienceForm({ initialValues, onSubmit, isLoading }: Experienc
             <FormItem><FormLabel>Role</FormLabel><FormControl><Input placeholder="Senior Developer" {...field} /></FormControl><FormMessage /></FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="startDate"

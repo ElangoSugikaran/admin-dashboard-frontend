@@ -56,8 +56,8 @@ export default function MessagesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
-          <p className="text-muted-foreground mt-1">Inbox for public site contact form submissions.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Messages</h1>
+          <p className="text-muted-foreground text-sm mt-1">Inbox for public site contact form submissions.</p>
         </div>
         <div className="flex rounded-md border p-1 bg-muted/20">
           <Button 

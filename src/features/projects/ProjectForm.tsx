@@ -278,7 +278,7 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="title"
@@ -494,7 +494,7 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
              </div>
 
             <div className="pt-4 border-t mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="methodology" render={({ field }) => (
                   <FormItem><FormLabel>Methodology</FormLabel><FormControl><Input placeholder="e.g. Agile..." {...field} /></FormControl></FormItem>
                 )} />
@@ -684,7 +684,7 @@ export function ProjectForm({ initialValues, onSubmit, isLoading }: ProjectFormP
               </FormItem>
             )} />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
