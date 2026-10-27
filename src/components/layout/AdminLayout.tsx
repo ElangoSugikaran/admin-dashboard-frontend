@@ -31,12 +31,14 @@ import {
   Settings,
   LogOut,
   User,
+  UserRound,
   ShieldCheck,
   ChevronRight,
 } from 'lucide-react';
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'About Me', url: '/about', icon: UserRound },
   { title: 'Projects', url: '/projects', icon: FolderKanban },
   { title: 'Education', url: '/education', icon: GraduationCap },
   { title: 'Experience', url: '/experience', icon: BriefcaseBusiness },
@@ -48,6 +50,7 @@ const navItems = [
 
 const routeTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard Overview', subtitle: 'Portfolio performance & summary' },
+  '/about': { title: 'About Me', subtitle: 'Personal profile, bio, CV & contact links' },
   '/projects': { title: 'Projects Management', subtitle: 'Showcase your portfolio work' },
   '/education': { title: 'Education', subtitle: 'Academic background & degrees' },
   '/experience': { title: 'Work Experience', subtitle: 'Career journey & roles' },
@@ -55,8 +58,9 @@ const routeTitles: Record<string, { title: string; subtitle: string }> = {
   '/certifications': { title: 'Certifications', subtitle: 'Credentials & achievements' },
   '/messages': { title: 'Inquiries & Messages', subtitle: 'Contact submissions' },
   '/profile': { title: 'Admin Profile', subtitle: 'Account details & security' },
-  '/settings': { title: 'Site Settings', subtitle: 'Portfolio configuration & hero' },
+  '/settings': { title: 'Site Settings', subtitle: 'Dashboard theme & appearance' },
 };
+
 
 function AppSidebar() {
   const location = useLocation();
