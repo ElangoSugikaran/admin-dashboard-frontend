@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { educationService } from '@/services/api/educationService';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, ArrowUp, ArrowDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { EducationForm } from './EducationForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -31,6 +32,13 @@ export default function EducationPage() {
     queryFn: educationService.getAll,
   });
 
+  const sortedItems = [...(items || [])].sort((a: any, b: any) => {
+    const orderA = typeof a.sortOrder === 'number' ? a.sortOrder : 0;
+    const orderB = typeof b.sortOrder === 'number' ? b.sortOrder : 0;
+    if (orderA !== orderB) return orderA - orderB;
+    return (b.startDate || '').localeCompare(a.startDate || '');
+  });
+
   const createMutation = useMutation({
     mutationFn: educationService.create,
     onSuccess: () => {
@@ -56,6 +64,17 @@ export default function EducationPage() {
     }
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: educationService.reorder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['education'] });
+      toast.success('Education order updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to update order');
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: educationService.delete,
     onSuccess: () => {
@@ -67,6 +86,26 @@ export default function EducationPage() {
       toast.error(err?.response?.data?.message || 'Failed to delete education');
     }
   });
+
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    if (!sortedItems || sortedItems.length <= 1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= sortedItems.length) return;
+
+    const newItems = [...sortedItems];
+    const currentItem = newItems[index];
+    const targetItem = newItems[targetIndex];
+
+    newItems[index] = targetItem;
+    newItems[targetIndex] = currentItem;
+
+    const orders = newItems.map((item, idx) => ({
+      id: item.id,
+      sortOrder: idx + 1,
+    }));
+
+    reorderMutation.mutate(orders);
+  };
 
   const openCreateDialog = () => {
     setSelectedItem(null);
@@ -83,7 +122,7 @@ export default function EducationPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Education</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage your educational background and degrees.</p>
+          <p className="text-muted-foreground text-sm mt-1">Manage your educational background, degrees, and display order.</p>
         </div>
         <Button onClick={openCreateDialog} className="self-start sm:self-auto gap-2">
           <Plus className="h-4 w-4" /> Add Education
@@ -94,14 +133,14 @@ export default function EducationPage() {
         <div className="p-6">
           {isLoading ? (
             <p className="text-muted-foreground text-center">Loading...</p>
-          ) : !items || items.length === 0 ? (
+          ) : !sortedItems || sortedItems.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">No education found.</p>
               <Button variant="outline" onClick={openCreateDialog}>Add Education</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {items?.map((item: any) => (
+              {sortedItems.map((item: any, index: number) => (
                 <div key={item.id} className="flex items-start justify-between p-4 border rounded-md hover:bg-muted/50 transition-colors overflow-hidden">
                   <div className="min-w-0 flex-1 pr-4">
                     <div className="flex items-center gap-3">
@@ -110,15 +149,48 @@ export default function EducationPage() {
                         return IconComp ? <IconComp className="w-8 h-8 shrink-0" /> : <div className="w-8 h-8 shrink-0 bg-muted rounded-md" />;
                       })()}
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-lg truncate">{item.institution}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-lg truncate">{item.institution}</h3>
+                          <Badge variant="outline" className="text-[11px] shrink-0 font-mono">
+                            #{item.sortOrder ?? 0}
+                          </Badge>
+                          {item.showOnHome && (
+                            <Badge variant="secondary" className="text-[10px] shrink-0">
+                              Home
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-muted-foreground truncate">{item.title}</p>
                       </div>
                     </div>
-                    <div className="mt-3 text-sm text-muted-foreground">
+                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                       <span>{item.startDate} — {item.endDate || 'Present'}</span>
+                      {item.grade && (
+                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
+                          {item.grade}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Move Up"
+                      disabled={index === 0 || reorderMutation.isPending}
+                      onClick={() => handleMove(index, 'up')}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Move Down"
+                      disabled={index === sortedItems.length - 1 || reorderMutation.isPending}
+                      onClick={() => handleMove(index, 'down')}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => setViewItem(item)}>
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -171,8 +243,23 @@ export default function EducationPage() {
                     const IconComp = viewItem.icon ? (lucideIcons as any)[viewItem.icon] : null;
                     return IconComp ? <IconComp className="w-10 h-10 text-primary shrink-0" /> : <div className="w-10 h-10 shrink-0 bg-muted rounded-md" />;
                   })()}
-                  <div>
-                    <h3 className="font-bold text-xl">{viewItem.institution}</h3>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-xl">{viewItem.institution}</h3>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        Order: #{viewItem.sortOrder ?? 0}
+                      </Badge>
+                      {viewItem.showOnHome && (
+                        <Badge variant="secondary" className="text-xs">
+                          Featured on Home
+                        </Badge>
+                      )}
+                      {viewItem.type && (
+                        <Badge variant="outline" className="text-xs uppercase">
+                          {viewItem.type}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-muted-foreground">{viewItem.title}</p>
                   </div>
                 </div>

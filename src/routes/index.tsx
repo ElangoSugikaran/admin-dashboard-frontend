@@ -11,6 +11,7 @@ import SkillsPage from '@/features/skills/SkillsPage';
 import CertificatesPage from '@/features/certificates/CertificatesPage';
 import MessagesPage from '@/features/messages/MessagesPage';
 import SettingsPage from '@/features/settings/SettingsPage';
+import AboutMePage from '@/features/about/AboutMePage';
 
 // Simple protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
         index: true,
         element: <DashboardPage />,
       },
+      { path: 'about', element: <AboutMePage /> },
       { path: 'projects', element: <ProjectsPage /> },
       { path: 'education', element: <EducationPage /> },
       { path: 'experience', element: <ExperiencePage /> },
@@ -55,3 +57,4 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+

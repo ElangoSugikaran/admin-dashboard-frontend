@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { GeneralIconSelector } from '@/components/ui/general-icon-selector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,12 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const educationSchema = z.object({
   institution: z.string().min(1, 'Institution is required'),
   title: z.string().min(1, 'Degree/Qualification is required'),
-  type: z.enum(['DEGREE', 'DIPLOMA', 'CERTIFICATE', 'SCHOOL']),
+  type: z.enum(['DEGREE', 'DIPLOMA', 'CERTIFICATE', 'TRAINING', 'SCHOOL']),
   startDate: z.string().min(1, 'Start date/year is required'),
   endDate: z.string().optional().nullable(),
   grade: z.string().optional().nullable(),
   description: z.string().optional(),
   icon: z.string().optional().nullable(),
+  sortOrder: z.number(),
+  showOnHome: z.boolean(),
 });
 
 type EducationFormValues = z.infer<typeof educationSchema>;
@@ -35,12 +38,14 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
     defaultValues: {
       institution: initialValues?.institution || '',
       title: initialValues?.title || '',
-      type: initialValues?.type || 'DEGREE',
+      type: (initialValues?.type as any) || 'DEGREE',
       startDate: initialValues?.startDate || '',
       endDate: initialValues?.endDate || '',
       grade: initialValues?.grade || '',
       description: initialValues?.description || '',
       icon: initialValues?.icon || null,
+      sortOrder: initialValues?.sortOrder ?? 0,
+      showOnHome: initialValues?.showOnHome ?? false,
     },
   });
 
@@ -93,6 +98,7 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
                     <SelectItem value="DEGREE">Degree</SelectItem>
                     <SelectItem value="DIPLOMA">Diploma</SelectItem>
                     <SelectItem value="CERTIFICATE">Certificate</SelectItem>
+                    <SelectItem value="TRAINING">Training</SelectItem>
                     <SelectItem value="SCHOOL">School</SelectItem>
                   </SelectContent>
                 </Select>
@@ -139,6 +145,48 @@ export function EducationForm({ initialValues, onSubmit, isLoading }: EducationF
                   <Input type="text" placeholder="e.g. July 2025" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+          <FormField
+            control={form.control}
+            name="sortOrder"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sort Order</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    {...field} 
+                    onChange={e => field.onChange(parseInt(e.target.value) || 0)} 
+                  />
+                </FormControl>
+                <p className="text-[11px] text-muted-foreground">
+                  Sequence number: lower numbers appear first (e.g. 1, 2, 3...)
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="showOnHome"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3.5 mt-1 sm:mt-0">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-sm font-medium">Show on Homepage</FormLabel>
+                  <p className="text-[11px] text-muted-foreground">
+                    Highlight in homepage Education section
+                  </p>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
               </FormItem>
             )}
           />
