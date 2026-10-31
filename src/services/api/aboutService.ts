@@ -111,7 +111,9 @@ export const aboutService = {
   // Save or update About Me data via the protected admin endpoint.
   // CVs are managed separately through /admin/cvs.
   updateAboutMe: async (data: AboutMeData): Promise<AboutMeData> => {
-    const { resumes: _resumes, ...payload } = data;
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([key]) => key !== 'resumes'),
+    ) as Omit<AboutMeData, 'resumes'>;
     const response = await apiClient.put('/admin/about', payload);
     return response.data?.data || response.data;
   },

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { dashboardService, type DashboardOverviewData } from '@/services/api/dashboardService';
+import { AnalyticsPanel } from '@/features/dashboard/AnalyticsPanel';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FolderKanban,
@@ -153,6 +154,8 @@ export default function DashboardPage() {
               );
             })}
       </div>
+
+      <AnalyticsPanel analytics={data?.metrics.analytics ?? null} loading={loading} />
 
       {/* Main Grid: Responsive 1 col on mobile/tablet, 12 cols on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

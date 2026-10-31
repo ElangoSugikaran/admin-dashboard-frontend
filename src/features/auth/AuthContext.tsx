@@ -1,11 +1,12 @@
-import { createContext, useContext, type ReactNode } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createContext, useCallback, useContext, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminService, type AdminProfile } from '@/services/api/adminService';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: any) => void;
+  login: (userData: AdminProfile) => void;
   logout: () => void;
   user: (AdminProfile & { avatar?: string }) | null;
 }
@@ -26,21 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = data?.admin || null;
 
   // Optimistically set the user in cache upon manual login
-  const login = (userData: any) => {
+  const login = (userData: AdminProfile) => {
     queryClient.setQueryData(['auth', 'me'], { admin: userData });
   };
 
-  const logoutMutation = useMutation({
-    mutationFn: adminService.logout,
-    onSettled: () => {
-      // Clear auth cache which will trigger re-renders and redirect to login
-      queryClient.setQueryData(['auth', 'me'], null);
-    }
-  });
-
-  const logout = () => {
-    logoutMutation.mutate();
-  };
+  const logout = useCallback(() => {
+    // Drop private data and redirect immediately; the server must expire the HttpOnly cookie.
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+    queryClient.setQueryData(['auth', 'me'], null);
+    void adminService.logout().catch(() => {
+      toast.error('Signed out locally, but the server could not confirm session revocation.');
+    });
+  }, [queryClient]);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, user }}>
