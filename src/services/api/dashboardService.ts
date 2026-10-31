@@ -36,7 +36,7 @@ export interface DashboardOverviewData {
 
 export const dashboardService = {
   getOverview: async (): Promise<DashboardOverviewData> => {
-    const response = await apiClient.get<{ success: boolean; data: DashboardOverviewData }>('/dashboard');
+    const response = await apiClient.get<{ success: boolean; data: DashboardOverviewData }>('/admin/dashboard');
     return response.data?.data || (response.data as unknown as DashboardOverviewData);
   },
 };

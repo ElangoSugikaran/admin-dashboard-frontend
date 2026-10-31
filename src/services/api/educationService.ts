@@ -20,7 +20,7 @@ export interface Education {
 
 export const educationService = {
   getAll: async (): Promise<Education[]> => {
-    const response = await apiClient.get('/education?all=true');
+    const response = await apiClient.get('/admin/education?all=true');
     const data = response.data?.data || response.data;
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
@@ -34,7 +34,7 @@ export const educationService = {
   },
   
   getById: async (id: string): Promise<Education> => {
-    const response = await apiClient.get(`/education/${id}`);
+    const response = await apiClient.get(`/admin/education/${id}`);
     const item = response.data?.data || response.data;
     if (item) {
       item.title = item.title || item.degree || '';
@@ -58,7 +58,7 @@ export const educationService = {
       showOnHome: Boolean(data.showOnHome),
       isVisible: data.isVisible !== undefined ? Boolean(data.isVisible) : true,
     };
-    const response = await apiClient.post('/education', payload);
+    const response = await apiClient.post('/admin/education', payload);
     return response.data;
   },
 
@@ -76,17 +76,17 @@ export const educationService = {
       showOnHome: data.showOnHome !== undefined ? Boolean(data.showOnHome) : undefined,
       isVisible: data.isVisible !== undefined ? Boolean(data.isVisible) : undefined,
     };
-    const response = await apiClient.put(`/education/${id}`, payload);
+    const response = await apiClient.put(`/admin/education/${id}`, payload);
     return response.data;
   },
 
   reorder: async (orders: { id: string; sortOrder: number }[]) => {
-    const response = await apiClient.put('/education/reorder', { orders });
+    const response = await apiClient.put('/admin/education/reorder', { orders });
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/education/${id}`);
+    const response = await apiClient.delete(`/admin/education/${id}`);
     return response.data;
   }
 };

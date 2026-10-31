@@ -58,7 +58,7 @@ const routeTitles: Record<string, { title: string; subtitle: string }> = {
   '/certifications': { title: 'Certifications', subtitle: 'Credentials & achievements' },
   '/messages': { title: 'Inquiries & Messages', subtitle: 'Contact submissions' },
   '/profile': { title: 'Admin Profile', subtitle: 'Account details & security' },
-  '/settings': { title: 'Site Settings', subtitle: 'Dashboard theme & appearance' },
+  '/settings': { title: 'Site Settings', subtitle: 'Portfolio branding & dashboard theme' },
 };
 
 
