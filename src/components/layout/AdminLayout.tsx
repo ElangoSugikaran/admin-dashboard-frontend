@@ -76,7 +76,7 @@ function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-border/80">
       <SidebarHeader className="border-b border-border/60">
-        <div className="flex h-12 items-center gap-2.5 px-3 font-semibold">
+        <div className="flex h-12 items-center gap-2.5 px-3 font-semibold group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
             <ShieldCheck className="h-4 w-4" />
           </div>
@@ -104,7 +104,7 @@ function AppSidebar() {
                       }
                       isActive={isActive}
                       tooltip={item.title}
-                      className="transition-colors hover:bg-accent/60"
+                      className="transition-colors hover:bg-accent/60 group-data-[collapsible=icon]:!justify-center"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
