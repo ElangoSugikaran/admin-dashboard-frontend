@@ -5,7 +5,7 @@ export const mediaService = {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await apiClient.post('/admin/media/upload', formData, {
+    const response = await apiClient.post('/media/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -14,7 +14,7 @@ export const mediaService = {
   },
 
   deleteFile: async (id: string) => {
-    const response = await apiClient.delete(`/admin/media/${id}`);
+    const response = await apiClient.delete(`/media/${id}`);
     return response.data;
   }
 };

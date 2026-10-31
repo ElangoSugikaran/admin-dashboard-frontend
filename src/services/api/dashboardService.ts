@@ -52,7 +52,7 @@ export const dashboardService = {
   getOverview: (): Promise<DashboardOverviewData> => {
     if (!overviewRequest) {
       overviewRequest = apiClient
-        .get<{ success: boolean; data: DashboardOverviewData }>('/admin/dashboard')
+        .get<{ success: boolean; data: DashboardOverviewData }>('/dashboard')
         .then((response) => response.data?.data || (response.data as unknown as DashboardOverviewData))
         .finally(() => {
           overviewRequest = null;
