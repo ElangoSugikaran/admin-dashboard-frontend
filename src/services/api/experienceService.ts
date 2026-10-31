@@ -11,7 +11,7 @@ export interface Experience {
 
 export const experienceService = {
   getAll: async (): Promise<Experience[]> => {
-    const response = await apiClient.get('/experience');
+    const response = await apiClient.get('/admin/experience?all=true');
     const data = response.data?.data || response.data;
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
@@ -24,7 +24,7 @@ export const experienceService = {
   },
   
   getById: async (id: string): Promise<Experience> => {
-    const response = await apiClient.get(`/experience/${id}`);
+    const response = await apiClient.get(`/admin/experience/${id}`);
     const item = response.data?.data || response.data;
     if (item) {
       item.startDate = item.startDate ? item.startDate.split('T')[0].substring(0, 7) : item.startDate;
@@ -42,7 +42,7 @@ export const experienceService = {
       description: data.description,
       icon: data.icon,
     };
-    const response = await apiClient.post('/experience', payload);
+    const response = await apiClient.post('/admin/experience', payload);
     return response.data;
   },
 
@@ -55,12 +55,12 @@ export const experienceService = {
       description: data.description,
       icon: data.icon,
     };
-    const response = await apiClient.put(`/experience/${id}`, payload);
+    const response = await apiClient.put(`/admin/experience/${id}`, payload);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/experience/${id}`);
+    const response = await apiClient.delete(`/admin/experience/${id}`);
     return response.data;
   }
 };

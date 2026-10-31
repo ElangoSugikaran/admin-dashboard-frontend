@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, X, Loader2, FileText, ExternalLink, Video } from 'lucide-react';
+import { UploadCloud, X, Loader2, ExternalLink, Video, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -93,8 +93,8 @@ export function FileUpload({ value, onChange, onUpload, accept = 'image/*', maxS
         <div className="relative w-full max-w-md rounded-xl border border-border/80 bg-muted/20 p-3 overflow-hidden group">
           {isPdf ? (
             <div className="flex items-center gap-3 p-2">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
-                <FileText className="h-6 w-6" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400">
+                <File className="h-6 w-6" />
               </div>
               <div className="flex-1 overflow-hidden pr-6">
                 <p className="text-sm font-medium truncate text-foreground">
@@ -106,7 +106,7 @@ export function FileUpload({ value, onChange, onUpload, accept = 'image/*', maxS
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-0.5 font-medium"
                 >
-                  <ExternalLink className="h-3 w-3" /> View / Download Document
+                  <ExternalLink className="h-3 w-3" /> View PDF
                 </a>
               </div>
             </div>

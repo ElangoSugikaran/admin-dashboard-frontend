@@ -44,27 +44,27 @@ export interface Project {
 
 export const projectsService = {
   getAll: async (): Promise<Project[]> => {
-    const response = await apiClient.get('/projects');
+    const response = await apiClient.get('/admin/projects?all=true');
     return response.data?.data || response.data;
   },
   
   getById: async (id: string): Promise<Project> => {
-    const response = await apiClient.get(`/projects/${id}`);
+    const response = await apiClient.get(`/admin/projects/${id}?all=true`);
     return response.data?.data || response.data;
   },
 
   create: async (data: any) => {
-    const response = await apiClient.post('/projects', data);
+    const response = await apiClient.post('/admin/projects', data);
     return response.data;
   },
 
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/projects/${id}`, data);
+    const response = await apiClient.put(`/admin/projects/${id}`, data);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/projects/${id}`);
+    const response = await apiClient.delete(`/admin/projects/${id}`);
     return response.data;
   }
 };

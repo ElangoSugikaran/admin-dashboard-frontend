@@ -13,16 +13,28 @@ export interface ResumeDocument {
   title: string;
   fileId: string;
   fileUrl: string;
+  publicId?: string;
+  resourceType?: string;
+  mimeType?: string;
   fileName?: string;
   fileSize?: string;
+  sizeBytes?: number;
   isPrimary: boolean;
   uploadedAt: string;
+}
+
+export interface AboutMedia {
+  id: string;
+  url: string;
+  fileName?: string;
+  type?: 'image' | 'video';
 }
 
 export interface AboutMeData {
   id?: string;
   fullName: string;
   title: string;
+  titles?: string[];
   tagline?: string;
   bio: string;
   location?: string;
@@ -34,12 +46,8 @@ export interface AboutMeData {
     url: string;
     fileName?: string;
   } | null;
-  introMedia?: {
-    id: string;
-    url: string;
-    fileName?: string;
-    type?: 'image' | 'video';
-  } | null;
+  introMedia?: AboutMedia | null;
+  introMediaGallery?: AboutMedia[];
   socialLinks: SocialLink[];
   resumes: ResumeDocument[];
   updatedAt?: string;
@@ -58,6 +66,7 @@ With expertise in React, TypeScript, Node.js, and cloud platforms, I specialize 
   availableForWork: true,
   avatar: null,
   introMedia: null,
+  introMediaGallery: [],
   socialLinks: [
     {
       id: 'social-1',
@@ -92,16 +101,18 @@ With expertise in React, TypeScript, Node.js, and cloud platforms, I specialize 
 };
 
 export const aboutService = {
-  // Fetch About Me data directly from Fastify backend (/api/v1/about)
+  // Fetch About Me data from the protected admin API.
   getAboutMe: async (): Promise<AboutMeData> => {
-    const response = await apiClient.get('/about');
+    const response = await apiClient.get('/admin/about');
     const data = response.data?.data || response.data;
     return data || defaultAboutMeData;
   },
 
-  // Save or update About Me data via Fastify backend (PUT /api/v1/about)
+  // Save or update About Me data via the protected admin endpoint.
+  // CVs are managed separately through /admin/cvs.
   updateAboutMe: async (data: AboutMeData): Promise<AboutMeData> => {
-    const response = await apiClient.put('/about', data);
+    const { resumes: _resumes, ...payload } = data;
+    const response = await apiClient.put('/admin/about', payload);
     return response.data?.data || response.data;
   },
 };

@@ -13,17 +13,13 @@ import {
   Plus,
   Trash2,
   ExternalLink,
-  CheckCircle2,
-  Upload,
   Globe,
   Mail,
   Phone,
   MapPin,
   Briefcase,
-  FileCheck,
   Video,
   Camera,
-  Check,
 } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -35,8 +31,10 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUpload } from '@/components/ui/file-upload';
+import { MediaGalleryUpload } from '@/components/ui/media-gallery-upload';
 import { mediaService } from '@/services/api/mediaService';
-import { aboutService, type AboutMeData, type ResumeDocument } from '@/services/api/aboutService';
+import { aboutService, type AboutMeData } from '@/services/api/aboutService';
+import { CvManager } from './CvManager';
 
 const socialLinkSchema = z.object({
   id: z.string(),
@@ -46,20 +44,12 @@ const socialLinkSchema = z.object({
   active: z.boolean().default(true),
 });
 
-const resumeSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1, 'Document title is required'),
-  fileId: z.string(),
-  fileUrl: z.string().url('Must be a valid URL'),
-  fileName: z.string().optional(),
-  fileSize: z.string().optional(),
-  isPrimary: z.boolean().default(false),
-  uploadedAt: z.string(),
-});
-
 const aboutFormSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   title: z.string().min(1, 'Professional title is required'),
+  professionalTitles: z.array(z.object({
+    value: z.string().trim().min(1, 'Professional title cannot be empty'),
+  })).min(1, 'Add at least one professional title'),
   tagline: z.string().optional(),
   bio: z.string().min(10, 'About me description must be at least 10 characters'),
   location: z.string().optional(),
@@ -67,9 +57,13 @@ const aboutFormSchema = z.object({
   phone: z.string().optional(),
   availableForWork: z.boolean().default(true),
   avatar: z.any().nullable().optional(),
-  introMedia: z.any().nullable().optional(),
+  introMediaGallery: z.array(z.object({
+    id: z.string(),
+    url: z.string(),
+    fileName: z.string().optional(),
+    type: z.enum(['image', 'video']).optional(),
+  })),
   socialLinks: z.array(socialLinkSchema),
-  resumes: z.array(resumeSchema),
 });
 
 type AboutFormValues = z.infer<typeof aboutFormSchema>;
@@ -77,10 +71,6 @@ type AboutFormValues = z.infer<typeof aboutFormSchema>;
 export default function AboutMePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('bio');
-
-  // New CV upload temporary state
-  const [newCvTitle, setNewCvTitle] = useState('');
-  const [newCvFile, setNewCvFile] = useState<{ id: string; url: string; fileName?: string } | null>(null);
 
   // Fetch about info from Fastify API
   const { data: initialData, isLoading: isFetching } = useQuery({
@@ -93,6 +83,7 @@ export default function AboutMePage() {
     defaultValues: {
       fullName: '',
       title: '',
+      professionalTitles: [{ value: '' }],
       tagline: '',
       bio: '',
       location: '',
@@ -100,9 +91,8 @@ export default function AboutMePage() {
       phone: '',
       availableForWork: true,
       avatar: null,
-      introMedia: null,
+      introMediaGallery: [],
       socialLinks: [],
-      resumes: [],
     },
   });
 
@@ -115,12 +105,25 @@ export default function AboutMePage() {
     name: 'socialLinks',
   });
 
+  const {
+    fields: professionalTitleFields,
+    append: appendProfessionalTitle,
+    remove: removeProfessionalTitle,
+  } = useFieldArray({
+    control: form.control,
+    name: 'professionalTitles',
+  });
+
   // Sync form values whenever initialData changes from backend
   useEffect(() => {
     if (initialData) {
       form.reset({
         fullName: initialData.fullName || '',
         title: initialData.title || '',
+        professionalTitles: (initialData.titles?.length
+          ? initialData.titles
+          : [initialData.title || '']
+        ).map((value) => ({ value })),
         tagline: initialData.tagline || '',
         bio: initialData.bio || '',
         location: initialData.location || '',
@@ -128,15 +131,26 @@ export default function AboutMePage() {
         phone: initialData.phone || '',
         availableForWork: initialData.availableForWork ?? true,
         avatar: initialData.avatar || null,
-        introMedia: initialData.introMedia || null,
+        introMediaGallery: initialData.introMediaGallery?.length
+          ? initialData.introMediaGallery
+          : initialData.introMedia
+            ? [initialData.introMedia]
+            : [],
         socialLinks: initialData.socialLinks || [],
-        resumes: initialData.resumes || [],
       });
     }
   }, [initialData, form]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: AboutFormValues) => aboutService.updateAboutMe(data as AboutMeData),
+    mutationFn: (data: AboutFormValues) => {
+      const { professionalTitles, ...aboutData } = data;
+      const titles = professionalTitles.map(({ value }) => value.trim()).filter(Boolean);
+      return aboutService.updateAboutMe({
+        ...aboutData,
+        title: titles[0] || data.title,
+        titles,
+      } as AboutMeData);
+    },
     onSuccess: (updated) => {
       queryClient.setQueryData(['aboutMe'], updated);
       queryClient.invalidateQueries({ queryKey: ['aboutMe'] });
@@ -157,71 +171,16 @@ export default function AboutMePage() {
     const errorKeys = Object.keys(errors);
     if (errorKeys.length === 0) return;
     const firstKey = errorKeys[0];
-    if (['fullName', 'title', 'tagline', 'bio', 'location', 'availableForWork'].includes(firstKey)) {
+    if (['fullName', 'title', 'professionalTitles', 'tagline', 'bio', 'location', 'availableForWork'].includes(firstKey)) {
       setActiveTab('bio');
     } else if (['email', 'phone', 'socialLinks'].includes(firstKey)) {
       setActiveTab('social');
-    } else if (['resumes'].includes(firstKey)) {
-      setActiveTab('resume');
-    } else if (['avatar', 'introMedia'].includes(firstKey)) {
+    } else if (['avatar', 'introMediaGallery'].includes(firstKey)) {
       setActiveTab('media');
     }
     const errorObj = errors[firstKey];
     const message = errorObj?.message || errorObj?.root?.message || 'Please check the required fields.';
     toast.error(typeof message === 'string' ? message : 'Please check required fields.');
-  };
-
-  // Add a newly uploaded CV to the resumes list
-  const handleAddNewCv = () => {
-    if (!newCvFile || !newCvFile.url) {
-      toast.error('Please upload a PDF file first.');
-      return;
-    }
-    const title = newCvTitle.trim() || newCvFile.fileName || 'Curriculum Vitae';
-    const currentResumes = form.getValues('resumes') || [];
-    const isFirst = currentResumes.length === 0;
-
-    const newDoc: ResumeDocument = {
-      id: `cv-${Date.now()}`,
-      title,
-      fileId: newCvFile.id,
-      fileUrl: newCvFile.url,
-      fileName: newCvFile.fileName || 'Resume.pdf',
-      isPrimary: isFirst,
-      uploadedAt: new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }),
-    };
-
-    const updatedResumes = [...currentResumes, newDoc];
-    form.setValue('resumes', updatedResumes, { shouldDirty: true });
-    setNewCvTitle('');
-    setNewCvFile(null);
-    toast.success(`Added "${title}" to your documents. Click Save to persist.`);
-  };
-
-  // Set a resume as the active primary one
-  const handleSetPrimaryCv = (id: string) => {
-    const currentResumes = form.getValues('resumes') || [];
-    const updated = currentResumes.map((cv) => ({
-      ...cv,
-      isPrimary: cv.id === id,
-    }));
-    form.setValue('resumes', updated, { shouldDirty: true });
-    toast.info('Active resume updated. Click Save to apply changes.');
-  };
-
-  // Remove a resume
-  const handleRemoveCv = (id: string) => {
-    const currentResumes = form.getValues('resumes') || [];
-    const filtered = currentResumes.filter((cv) => cv.id !== id);
-    if (filtered.length > 0 && !filtered.some((cv) => cv.isPrimary)) {
-      filtered[0].isPrimary = true;
-    }
-    form.setValue('resumes', filtered, { shouldDirty: true });
-    toast.info('Resume removed. Click Save to apply changes.');
   };
 
   // Quick preset helper for common social links
@@ -250,7 +209,7 @@ export default function AboutMePage() {
     );
   }
 
-  const resumesList = form.watch('resumes') || [];
+  const resumeCount = initialData?.resumes?.length ?? 0;
   const socialList = form.watch('socialLinks') || [];
 
   return (
@@ -301,9 +260,9 @@ export default function AboutMePage() {
                 >
                   <FileText className="h-3.5 w-3.5 text-rose-500" />
                   <span>CV & Resumes</span>
-                  {resumesList.length > 0 && (
+                  {resumeCount > 0 && (
                     <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] font-mono">
-                      {resumesList.length}
+                      {resumeCount}
                     </span>
                   )}
                 </TabsTrigger>
@@ -335,7 +294,7 @@ export default function AboutMePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
                       name="fullName"
@@ -352,21 +311,69 @@ export default function AboutMePage() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Professional Title / Role <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. Full Stack Developer & Cloud Engineer" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  </div>
+
+                  <div className="space-y-3 rounded-xl border border-border/80 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <FormLabel>Professional Titles / Roles</FormLabel>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Add each role separately. The first title is primary; all titles rotate in the portfolio hero.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendProfessionalTitle({ value: '' })}
+                        className="gap-1.5"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add title
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {professionalTitleFields.map((field, index) => (
+                        <div key={field.id} className="flex items-start gap-2">
+                          <FormField
+                            control={form.control}
+                            name={`professionalTitles.${index}.value`}
+                            render={({ field: inputField }) => (
+                              <FormItem className="flex-1">
+                                <FormLabel className="sr-only">
+                                  {index === 0 ? 'Primary professional title' : `Professional title ${index + 1}`}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder={index === 0 ? 'e.g. Full Stack Developer' : 'e.g. Cloud Engineer'}
+                                    {...inputField}
+                                    onChange={(event) => {
+                                      inputField.onChange(event);
+                                      if (index === 0) {
+                                        form.setValue('title', event.target.value, { shouldDirty: true });
+                                      }
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {professionalTitleFields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="mt-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => removeProfessionalTitle(index)}
+                              aria-label={`Remove professional title ${index + 1}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -726,180 +733,9 @@ export default function AboutMePage() {
 
             {/* TAB 3: RESUME & CV (MULTIPLE PDF SUPPORT) */}
             <TabsContent value="resume" className="space-y-6">
-              <Card className="border-border/80 shadow-xs">
-                <CardHeader className="pb-4 border-b border-border/60">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
-                      <FileCheck className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">Curriculum Vitae & Resumes</CardTitle>
-                      <CardDescription className="text-xs sm:text-sm">
-                        Keep multiple PDF versions and designate which one is the active download on your public portfolio.
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-6">
-                  {/* Managed Resumes List */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-foreground">Available Documents ({resumesList.length})</h3>
-                      <span className="text-xs text-muted-foreground">The active document is served to portfolio visitors</span>
-                    </div>
-
-                    {resumesList.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed rounded-xl bg-muted/20">
-                        <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                        <p className="text-sm font-medium text-foreground">No CV or Resume uploaded yet.</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Use the section below to upload your first PDF resume.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 gap-3">
-                        {resumesList.map((cv) => (
-                          <div
-                            key={cv.id}
-                            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all duration-200 ${
-                              cv.isPrimary
-                                ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-xs'
-                                : 'border-border/80 hover:border-border bg-background/60'
-                            }`}
-                          >
-                            <div className="flex items-start gap-3.5 overflow-hidden">
-                              <div
-                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${
-                                  cv.isPrimary ? 'bg-primary text-primary-foreground' : 'bg-rose-500/10 text-rose-500'
-                                }`}
-                              >
-                                <FileText className="h-6 w-6" />
-                              </div>
-                              <div className="overflow-hidden">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-semibold text-sm text-foreground truncate">{cv.title}</span>
-                                  {cv.isPrimary && (
-                                    <Badge className="bg-primary text-primary-foreground text-[10px] gap-1 px-1.5 py-0 font-medium">
-                                      <CheckCircle2 className="h-3 w-3" /> Active on Portfolio
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                                  {cv.fileName || 'Resume.pdf'} • Added {cv.uploadedAt || 'recently'}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                              {!cv.isPrimary ? (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleSetPrimaryCv(cv.id)}
-                                  className="text-xs h-8 gap-1 border-border/80"
-                                >
-                                  <Check className="h-3 w-3" /> Set as Active
-                                </Button>
-                              ) : (
-                                <span className="text-[11px] text-primary font-medium px-2 py-1 rounded bg-primary/10">
-                                  Primary Download
-                                </span>
-                              )}
-
-                              <a
-                                href={cv.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent text-xs h-8 px-2.5 font-medium transition-colors gap-1"
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" /> View PDF
-                              </a>
-
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive/80 hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleRemoveCv(cv.id)}
-                                title="Delete CV"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload New Resume Section */}
-                  <div className="border-t border-border/60 pt-6 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Upload className="h-4 w-4 text-rose-500" />
-                      <h3 className="text-sm font-semibold text-foreground">Upload New PDF Resume</h3>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-foreground">Document Title / Tag</label>
-                        <Input
-                          placeholder="e.g. Full Stack Developer Resume (2026)"
-                          value={newCvTitle}
-                          onChange={(e) => setNewCvTitle(e.target.value)}
-                        />
-                        <p className="text-[11px] text-muted-foreground">
-                          Friendly label to distinguish this resume format in your dashboard.
-                        </p>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-foreground">Select PDF Document</label>
-                        <FileUpload
-                          value={newCvFile}
-                          onChange={(f) => {
-                            if (typeof f === 'string') {
-                              setNewCvFile({ id: f, url: f });
-                            } else {
-                              setNewCvFile(f);
-                            }
-                          }}
-                          onUpload={mediaService.uploadFile}
-                          accept="application/pdf"
-                          maxSize={15 * 1024 * 1024}
-                          label="Drop your PDF resume here or click to browse"
-                        />
-                      </div>
-
-                      <div className="flex justify-end pt-1">
-                        <Button
-                          type="button"
-                          onClick={handleAddNewCv}
-                          disabled={!newCvFile}
-                          className="gap-2 font-medium"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add to Resumes List
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-
-                {/* Dedicated Per-Tab Save Action (Bottom-Right) */}
-                <CardFooter className="flex justify-end pt-4 pb-4 border-t border-border/60 bg-muted/10">
-                  <Button
-                    type="submit"
-                    disabled={updateMutation.isPending}
-                    className="gap-2 font-medium shadow-xs"
-                  >
-                    <Save className="h-4 w-4" />
-                    {updateMutation.isPending ? 'Saving...' : 'Save Resumes'}
-                  </Button>
-                </CardFooter>
-              </Card>
+              <CvManager />
             </TabsContent>
+
 
             {/* TAB 4: MEDIA & VISUALS */}
             <TabsContent value="media" className="space-y-6">
@@ -953,25 +789,23 @@ export default function AboutMePage() {
                   <div className="border-t border-border/60 pt-6 space-y-2">
                     <div className="flex items-center gap-2">
                       <Video className="h-4 w-4 text-amber-500" />
-                      <h3 className="text-sm font-semibold text-foreground">Intro Video or Featured Showcase Media</h3>
+                      <h3 className="text-sm font-semibold text-foreground">Introduction & Showcase Gallery</h3>
                     </div>
                     <FormField
                       control={form.control}
-                      name="introMedia"
+                      name="introMediaGallery"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <FileUpload
-                              value={field.value}
+                            <MediaGalleryUpload
+                              value={field.value || []}
                               onChange={field.onChange}
                               onUpload={mediaService.uploadFile}
-                              accept="video/*,image/*"
                               maxSize={30 * 1024 * 1024}
-                              label="Upload an introduction video (.mp4, .webm) or showcase banner"
                             />
                           </FormControl>
                           <FormDescription className="text-xs">
-                            Supports MP4/WebM videos up to 30MB, or landscape banner photos.
+                            Upload multiple images and videos. Remove individual files here, then save to update your portfolio gallery.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
