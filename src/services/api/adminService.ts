@@ -33,19 +33,19 @@ export interface LoginCredentials {
 export const adminService = {
   // Fetch current admin profile with profileImage
   getProfile: async (): Promise<AdminProfile> => {
-    const res = await apiClient.get<{ success: boolean; data: AdminProfile }>('/admin/auth/me');
+    const res = await apiClient.get<{ success: boolean; data: AdminProfile }>('/auth/me');
     return res.data.data;
   },
 
   // Update name, email, or profileImageId
   updateProfile: async (data: UpdateProfileInput): Promise<AdminProfile> => {
-    const res = await apiClient.put<{ success: boolean; admin: AdminProfile }>('/admin/auth/profile', data);
+    const res = await apiClient.put<{ success: boolean; admin: AdminProfile }>('/auth/profile', data);
     return res.data.admin;
   },
 
   // Update admin password
   updatePassword: async (data: UpdatePasswordInput): Promise<{ message: string }> => {
-    const res = await apiClient.put<{ success: boolean; message: string }>('/admin/auth/password', data);
+    const res = await apiClient.put<{ success: boolean; message: string }>('/auth/password', data);
     return res.data;
   },
 
@@ -54,7 +54,7 @@ export const adminService = {
     const formData = new FormData();
     formData.append('file', file);
     const res = await apiClient.post<{ success: boolean; data: { id: string; url: string } }>(
-      '/admin/media/upload',
+      '/media/upload',
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );
@@ -73,7 +73,7 @@ export const adminService = {
   },
 
   getMe: async (): Promise<{ success: boolean; admin: AdminProfile }> => {
-    const response = await apiClient.get<{ success: boolean; data: AdminProfile }>('/admin/auth/me');
+    const response = await apiClient.get<{ success: boolean; data: AdminProfile }>('/auth/me');
     return {
       success: response.data.success,
       admin: response.data.data,
