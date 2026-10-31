@@ -18,12 +18,12 @@ export interface SiteSettings {
 
 export const settingsService = {
   getSettings: async (): Promise<SiteSettings> => {
-    const response = await apiClient.get('/admin/settings');
+    const response = await apiClient.get('/settings');
     return response.data?.data || response.data;
   },
 
   updateSettings: async (data: { brandLogoId: string | null }): Promise<SiteSettings> => {
-    const response = await apiClient.put('/admin/settings', data);
+    const response = await apiClient.put('/settings', data);
     return response.data?.data || response.data;
   },
 };

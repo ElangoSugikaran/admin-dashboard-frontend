@@ -14,22 +14,22 @@ export interface Message {
 
 export const messagesService = {
   getAll: async (): Promise<Message[]> => {
-    const response = await apiClient.get('/admin/messages');
+    const response = await apiClient.get('/messages');
     return response.data?.data || response.data;
   },
   
   getById: async (id: string): Promise<Message> => {
-    const response = await apiClient.get(`/admin/messages/${id}`);
+    const response = await apiClient.get(`/messages/${id}`);
     return response.data?.data || response.data;
   },
 
   updateStatus: async (id: string, data: { isRead?: boolean; isArchived?: boolean }) => {
-    const response = await apiClient.patch(`/admin/messages/${id}`, data);
+    const response = await apiClient.patch(`/messages/${id}`, data);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/admin/messages/${id}`);
+    const response = await apiClient.delete(`/messages/${id}`);
     return response.data;
   }
 };

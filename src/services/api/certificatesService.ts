@@ -24,7 +24,7 @@ export interface Certificate {
 
 export const certificatesService = {
   getAll: async (): Promise<Certificate[]> => {
-    const response = await apiClient.get('/admin/certificates?all=true');
+    const response = await apiClient.get('/certificates?all=true');
     const data = response.data?.data || response.data;
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
@@ -36,7 +36,7 @@ export const certificatesService = {
   },
   
   getById: async (id: string): Promise<Certificate> => {
-    const response = await apiClient.get(`/admin/certificates/${id}`);
+    const response = await apiClient.get(`/certificates/${id}`);
     const item = response.data?.data || response.data;
     if (item) {
       item.date = item.issuedAt ? item.issuedAt.split('T')[0].substring(0, 7) : item.date;
@@ -53,7 +53,7 @@ export const certificatesService = {
       credentialUrl: data.credentialUrl && data.credentialUrl.trim() !== '' ? data.credentialUrl.trim() : null,
       imageId: data.file?.id || (typeof data.file === 'string' ? data.file : undefined),
     };
-    const response = await apiClient.post('/admin/certificates', payload);
+    const response = await apiClient.post('/certificates', payload);
     return response.data;
   },
 
@@ -66,12 +66,12 @@ export const certificatesService = {
       credentialUrl: data.credentialUrl && data.credentialUrl.trim() !== '' ? data.credentialUrl.trim() : null,
       imageId: data.file?.id || (typeof data.file === 'string' ? data.file : undefined),
     };
-    const response = await apiClient.put(`/admin/certificates/${id}`, payload);
+    const response = await apiClient.put(`/certificates/${id}`, payload);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/admin/certificates/${id}`);
+    const response = await apiClient.delete(`/certificates/${id}`);
     return response.data;
   }
 };
