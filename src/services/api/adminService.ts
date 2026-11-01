@@ -31,12 +31,6 @@ export interface LoginCredentials {
 }
 
 export const adminService = {
-  // Fetch current admin profile with profileImage
-  getProfile: async (): Promise<AdminProfile> => {
-    const res = await apiClient.get<{ success: boolean; data: AdminProfile }>('/auth/me');
-    return res.data.data;
-  },
-
   // Update name, email, or profileImageId
   updateProfile: async (data: UpdateProfileInput): Promise<AdminProfile> => {
     const res = await apiClient.put<{ success: boolean; admin: AdminProfile }>('/auth/profile', data);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ContentSkeleton, PageError } from '@/components/ui/page-feedback';
 import { certificatesService } from '@/services/api/certificatesService';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
@@ -25,7 +26,7 @@ export default function CertificatesPage() {
   
   const queryClient = useQueryClient();
 
-  const { data: items, isLoading } = useQuery({
+  const { data: items, isLoading, isError, refetch } = useQuery({
     queryKey: ['certificates'],
     queryFn: certificatesService.getAll,
   });
@@ -92,8 +93,8 @@ export default function CertificatesPage() {
       <div className="border rounded-lg bg-card text-card-foreground shadow-sm">
         <div className="p-6">
           {isLoading ? (
-            <p className="text-muted-foreground text-center">Loading...</p>
-          ) : !items || items.length === 0 ? (
+            <ContentSkeleton count={4} />
+          ) : isError ? (<PageError message="We could not retrieve this section. Try again." onRetry={() => void refetch()} />) : !items || items.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">No certificates found.</p>
               <Button variant="outline" onClick={openCreateDialog}>Add Certificate</Button>

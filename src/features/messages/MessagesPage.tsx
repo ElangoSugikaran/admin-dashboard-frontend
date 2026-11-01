@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ContentSkeleton, PageError } from '@/components/ui/page-feedback';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -22,7 +23,7 @@ export default function MessagesPage() {
   const [filter, setFilter] = useState<'inbox' | 'archived'>('inbox');
   const queryClient = useQueryClient();
 
-  const { data: messages, isLoading } = useQuery({
+  const { data: messages, isLoading, isError, refetch } = useQuery({
     queryKey: ['messages'],
     queryFn: messagesService.getAll,
   });
@@ -82,8 +83,8 @@ export default function MessagesPage() {
       <div className="border rounded-lg bg-card text-card-foreground shadow-sm">
         <div className="p-0">
           {isLoading ? (
-            <p className="p-6 text-muted-foreground text-center">Loading messages...</p>
-          ) : filteredMessages.length === 0 ? (
+            <ContentSkeleton count={5} />
+          ) : isError ? (<PageError message="We could not retrieve this section. Try again." onRetry={() => void refetch()} />) : filteredMessages.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-muted-foreground mb-2">No {filter} messages found.</p>
               {filter === 'archived' && <p className="text-sm text-muted-foreground">Archived messages will appear here.</p>}

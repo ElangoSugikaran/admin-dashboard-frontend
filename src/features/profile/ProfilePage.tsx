@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Camera, Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
-import { adminService, type AdminProfile } from '@/services/api/adminService';
-import { useQueryClient } from '@tanstack/react-query';
+import { adminService } from '@/services/api/adminService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ContentSkeleton, PageError } from '@/components/ui/page-feedback';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<AdminProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
+  const { data: session, isLoading, isError, refetch } = useQuery({ queryKey: ['auth', 'me'], queryFn: adminService.getMe, retry: false, staleTime: 60_000 });
+  const profile = session?.admin ?? null;
 
   // Profile Form State
   const [name, setName] = useState('');
@@ -31,22 +32,10 @@ export default function ProfilePage() {
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await adminService.getProfile();
-      setProfile(data);
-      setName(data.name || '');
-      setEmail(data.email || '');
-    } catch (err: any) {
-      setProfileMessage({ type: 'error', text: 'Failed to load profile details' });
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (!profile) return;
+    setName(profile.name || '');
+    setEmail(profile.email || '');
+  }, [profile]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,8 +54,7 @@ export default function ProfilePage() {
       const uploadedMedia = await adminService.uploadAvatar(file);
       // 2. Attach media ID to admin profile
       const updated = await adminService.updateProfile({ profileImageId: uploadedMedia.id });
-      setProfile(updated);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['auth', 'me'], { success: true, admin: updated });
       setProfileMessage({ type: 'success', text: 'Profile picture updated successfully!' });
       toast.success('Profile picture updated successfully!');
     } catch (err: any) {
@@ -84,8 +72,7 @@ export default function ProfilePage() {
       setUploadingAvatar(true);
       setProfileMessage(null);
       const updated = await adminService.updateProfile({ profileImageId: null });
-      setProfile(updated);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['auth', 'me'], { success: true, admin: updated });
       setProfileMessage({ type: 'success', text: 'Profile picture removed.' });
       toast.success('Profile picture removed.');
     } catch (err: any) {
@@ -103,8 +90,7 @@ export default function ProfilePage() {
     try {
       setProfileSaving(true);
       const updated = await adminService.updateProfile({ name, email });
-      setProfile(updated);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['auth', 'me'], { success: true, admin: updated });
       setProfileMessage({ type: 'success', text: 'Profile information updated successfully!' });
       toast.success('Profile information updated successfully!');
     } catch (err: any) {
@@ -120,8 +106,8 @@ export default function ProfilePage() {
     e.preventDefault();
     setPasswordMessage(null);
 
-    if (newPassword.length < 6) {
-      setPasswordMessage({ type: 'error', text: 'New password must be at least 6 characters long.' });
+    if (newPassword.length < 12) {
+      setPasswordMessage({ type: 'error', text: 'New password must be at least 12 characters long.' });
       return;
     }
 
@@ -133,7 +119,7 @@ export default function ProfilePage() {
     try {
       setPasswordSaving(true);
       await adminService.updatePassword({ currentPassword, newPassword });
-      setPasswordMessage({ type: 'success', text: 'Password changed successfully! Use this password for your next login.' });
+      setPasswordMessage({ type: 'success', text: 'Password updated. Other sessions have been signed out.' });
       toast.success('Password changed successfully!');
       setCurrentPassword('');
       setNewPassword('');
@@ -147,15 +133,10 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (isLoading) return <ContentSkeleton count={2} />;
+  if (isError || !profile) return <PageError message="We could not retrieve your account details. Try again." onRetry={() => void refetch()} />;
 
-  const avatarUrl = profile?.profileImage?.url;
+  const avatarUrl = profile.profileImage?.url;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -317,7 +298,7 @@ export default function ProfilePage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="At least 6 characters"
+                placeholder="At least 12 characters"
                 required
               />
             </div>
