@@ -42,7 +42,7 @@ export default function DashboardPage() {
       const overview = await dashboardService.getOverview();
       setData(overview);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to load dashboard data');
+      setError('Dashboard information is temporarily unavailable. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { toast } from 'sonner';
 import { mediaService } from '@/services/api/mediaService';
 import { settingsService, type BrandLogo } from '@/services/api/settingsService';
+import { ContentSkeleton, PageError } from '@/components/ui/page-feedback';
 
 export default function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -59,12 +60,10 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           {settingsQuery.isLoading && (
-            <p className="text-sm text-muted-foreground">Loading portfolio settings...</p>
+            <ContentSkeleton count={1} />
           )}
           {settingsQuery.isError && (
-            <p role="alert" className="text-sm text-destructive">
-              Could not load the current portfolio logo. Refresh the page to try again.
-            </p>
+            <PageError message="Could not retrieve the portfolio logo." onRetry={() => void settingsQuery.refetch()} />
           )}
           {!settingsQuery.isLoading && !settingsQuery.isError && (
             <>
