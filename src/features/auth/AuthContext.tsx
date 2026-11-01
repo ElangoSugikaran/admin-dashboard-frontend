@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['auth', 'me'],
     queryFn: adminService.getMe,
     retry: false, // Don't retry on 401 Unauthorized
+    staleTime: 60_000,
   });
 
   const isAuthenticated = !!data?.admin;

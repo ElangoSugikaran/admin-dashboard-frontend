@@ -27,6 +27,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { ContentSkeleton, PageError } from '@/components/ui/page-feedback';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -73,7 +74,7 @@ export default function AboutMePage() {
   const [activeTab, setActiveTab] = useState('bio');
 
   // Fetch about info from Fastify API
-  const { data: initialData, isLoading: isFetching } = useQuery({
+  const { data: initialData, isLoading: isFetching, isError, refetch } = useQuery({
     queryKey: ['aboutMe'],
     queryFn: aboutService.getAboutMe,
   });
@@ -200,14 +201,8 @@ export default function AboutMePage() {
     toast.success(`Added ${platform} profile`);
   };
 
-  if (isFetching) {
-    return (
-      <div className="flex h-64 w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <span className="text-sm">Loading About Me details from backend...</span>
-      </div>
-    );
-  }
+  if (isFetching) return <ContentSkeleton count={4} />;
+  if (isError) return <PageError message="We could not retrieve your portfolio profile. Try again." onRetry={() => void refetch()} />;
 
   const resumeCount = initialData?.resumes?.length ?? 0;
   const socialList = form.watch('socialLinks') || [];

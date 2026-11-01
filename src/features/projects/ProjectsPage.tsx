@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ContentSkeleton, PageError } from '@/components/ui/page-feedback';
 import { projectsService } from '@/services/api/projectsService';
 import { toast } from 'sonner';
 
@@ -27,7 +28,7 @@ export default function ProjectsPage() {
   const [viewItem, setViewItem] = useState<any>(null);
   const queryClient = useQueryClient();
 
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects, isLoading, isError, refetch } = useQuery({
     queryKey: ['projects'],
     queryFn: projectsService.getAll,
   });
@@ -169,8 +170,8 @@ export default function ProjectsPage() {
       <div className="border border-border/80 rounded-xl bg-card text-card-foreground shadow-xs">
         <div className="p-4 sm:p-6">
           {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">Loading projects...</p>
-          ) : projects?.length === 0 ? (
+            <ContentSkeleton count={4} />
+          ) : isError ? (<PageError message="We could not retrieve this section. Try again." onRetry={() => void refetch()} />) : projects?.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No projects found.</p>
               <Button variant="outline" onClick={() => { setEditingId(null); setIsFormOpen(true); }}>

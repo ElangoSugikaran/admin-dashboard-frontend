@@ -10,6 +10,8 @@ import {
   YAxis,
 } from 'recharts';
 import type { DashboardAnalytics } from '@/services/api/dashboardService';
+import { Skeleton } from '@/components/ui/skeleton';
+import { LoaderCircle } from 'lucide-react';
 
 interface AnalyticsPanelProps {
   analytics: DashboardAnalytics | null;
@@ -31,14 +33,19 @@ export function AnalyticsPanel({ analytics, loading }: AnalyticsPanelProps) {
           </CardDescription>
         </div>
         <Badge variant={connected ? 'default' : 'outline'}>
-          {loading ? 'Loading' : connected ? 'Connected' : analytics?.status === 'unavailable' ? 'Unavailable' : 'Setup needed'}
+          {loading ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-label="Preparing analytics" /> : connected ? 'Connected' : analytics?.status === 'unavailable' ? 'Unavailable' : 'Setup needed'}
         </Badge>
       </CardHeader>
       <CardContent>
-        {!connected ? (
+        {loading ? (
+          <div role="status" aria-label="Preparing analytics" className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-16 rounded-lg" />)}</div>
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </div>
+        ) : !connected ? (
           <div className="rounded-lg border border-dashed border-border p-5 text-sm text-muted-foreground">
             {analytics?.status === 'unavailable'
-              ? 'Google Analytics could not be reached. Check the backend service credentials and logs.'
+              ? 'Visitor analytics are temporarily unavailable. Try again later.'
               : 'Add the GA4 property ID and service account credentials to the backend environment to show visitor reports.'}
           </div>
         ) : (

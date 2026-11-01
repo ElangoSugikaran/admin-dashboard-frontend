@@ -9,10 +9,10 @@ import { toast } from 'sonner';
 // Create a query client instance for the app
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error, query) => {
+    onError: (_error, query) => {
       if (query.queryKey[0] === 'auth') return;
-      const responseMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      const message = responseMessage || (error instanceof Error ? error.message : 'Please try again.');
+      // Keep infrastructure and internal API details out of dashboard notifications.
+      const message = 'We could not load this section. Please try again.';
       // Query failures have one app-wide toast path; mutation feedback stays with each form/action.
       toast.error(message, { id: `query-error-${String(query.queryKey[0] ?? 'unknown')}` });
     },

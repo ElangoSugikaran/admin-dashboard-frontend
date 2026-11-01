@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { ContentSkeleton } from '@/components/ui/page-feedback';
 import {
   cvService,
   MAX_CV_SIZE,
@@ -91,7 +92,7 @@ export function CvManager() {
   const [viewingId, setViewingId] = useState<string | null>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: cvs = [], isLoading, isError, error, refetch } = useQuery({
+  const { data: cvs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['cvs'],
     queryFn: cvService.list,
   });
@@ -280,15 +281,12 @@ export function CvManager() {
             </div>
 
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/20 py-10 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading CVs...
-              </div>
+              <ContentSkeleton count={2} />
             ) : isError ? (
               <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
-                  <p>{errorMessage(error, 'Failed to load CVs.')}</p>
+                  <p>Could not retrieve your CV documents. Try again.</p>
                   <Button type="button" variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
                     Try again
                   </Button>
